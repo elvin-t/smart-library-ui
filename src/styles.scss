@@ -1,0 +1,26 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'sass:color';
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background-color: #f6f8fb;
+  color: #111827;
+}
+
+.card {
+  border: none;
+  border-radius: 16px;
+}
+
+.btn {
+  border-radius: 10px;
+}
+
+.table {
+  background: #ffffff;
+}

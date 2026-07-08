@@ -1,0 +1,18 @@
+<header class="app-header">
+  <div>
+    <h5 class="mb-0">Smart Library Platform</h5>
+    <small class="text-muted">Microservices Library Management System</small>
+  </div>
+
+  <div class="user-section">
+    <div class="text-end">
+      <div class="fw-semibold">{{ authService.getEmail() || 'User' }}</div>
+      <small class="text-muted">{{ authService.getRoles().join(', ') }}</small>
+    </div>
+
+    <button type="button" class="btn btn-outline-danger btn-sm" (click)="logout()">
+      <i class="bi bi-box-arrow-right me-1"></i>
+      Logout
+    </button>
+  </div>
+</header>
