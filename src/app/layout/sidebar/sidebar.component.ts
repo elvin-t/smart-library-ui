@@ -65,10 +65,11 @@ export class SidebarComponent {
       roles: ['ADMIN', 'LIBRARIAN', 'MEMBER']
     },
     {
-      label: 'Notifications',
-      icon: 'bi bi-bell',
-      route: '/app/notifications'
-    }
+  label: 'Notifications',
+  icon: 'bi bi-bell',
+  route: '/app/notifications',
+  permissions: [PERMISSIONS.BORROW_READ]
+}
   ];
 
   constructor(public permissionService: PermissionService) {}

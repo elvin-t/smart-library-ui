@@ -180,6 +180,17 @@ export const routes: Routes = [
       .then(m => m.MyBorrowsComponent)
 },
 
+{
+  path: 'notifications',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BORROW_READ]
+  },
+  loadComponent: () =>
+    import('./features/notifications/pages/notification-list/notification-list.component')
+      .then(m => m.NotificationListComponent)
+},
+
 /* 
 Fines page
 */
