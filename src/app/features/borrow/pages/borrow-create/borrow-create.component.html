@@ -1,0 +1,56 @@
+<div class="borrow-create-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Borrow Book</h3>
+      <p class="text-muted mb-0">
+        Create a borrow record using User ID and Book ID.
+      </p>
+    </div>
+
+    <a routerLink="/app/borrow-records" class="btn btn-outline-secondary">
+      Back
+    </a>
+  </div>
+
+  <form class="form-card mt-3" [formGroup]="borrowForm" (ngSubmit)="borrowBook()">
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">User ID</label>
+        <input type="number" class="form-control" formControlName="userId" />
+
+        <small class="text-muted">
+          Default value is taken from logged-in user token.
+        </small>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Book ID</label>
+        <input
+          type="number"
+          class="form-control"
+          formControlName="bookId"
+          placeholder="Enter book ID"
+        />
+      </div>
+    </div>
+
+    <div class="form-actions mt-4">
+      <button type="button" routerLink="/app/borrow-records" class="btn btn-outline-secondary">
+        Cancel
+      </button>
+
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+        <span *ngIf="!isSaving">Borrow Book</span>
+
+        <span *ngIf="isSaving">
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Borrowing...
+        </span>
+      </button>
+    </div>
+
+  </form>
+
+</div>

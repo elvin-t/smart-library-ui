@@ -1,0 +1,135 @@
+<div class="borrow-list-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Borrow Records</h3>
+      <p class="text-muted mb-0">
+        View and manage all book borrow and return activities.
+      </p>
+    </div>
+
+    <a
+      *ngIf="canBorrow()"
+      routerLink="/app/borrow-records/create"
+      class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>
+      Borrow Book
+    </a>
+  </div>
+
+  <div class="filter-card mt-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Status</label>
+
+        <select class="form-select" [(ngModel)]="selectedStatus" (change)="filterByStatus()">
+          <option value="">All Status</option>
+
+          <option *ngFor="let status of statuses" [value]="status.value">
+            {{ status.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100" (click)="clearFilter()">
+          Clear Filter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card mt-3">
+
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="text-muted mt-2">Loading borrow records...</p>
+    </div>
+
+    <div *ngIf="!isLoading && borrowRecords.length === 0" class="empty-state">
+      <i class="bi bi-arrow-left-right"></i>
+      <h5>No borrow records found</h5>
+      <p class="text-muted">No records available for the selected filter.</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!isLoading && borrowRecords.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User ID</th>
+            <th>Book ID</th>
+            <th>Borrowed At</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Fine</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let record of borrowRecords">
+            <td>#{{ record.id }}</td>
+            <td>{{ record.userId }}</td>
+            <td>{{ record.bookId }}</td>
+            <td>{{ record.borrowedAt | date:'medium' }}</td>
+            <td>{{ record.dueDate | date:'medium' }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(record.status)">
+                {{ record.status }}
+              </span>
+            </td>
+
+            <td>
+              <span [ngClass]="getFineClass(record)">
+                {{ record.fineAmount || 0 | currency:'INR' }}
+              </span>
+
+              <small *ngIf="record.finePaid" class="text-success d-block">
+                Paid
+              </small>
+            </td>
+
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewDetails(record)">
+                View
+              </button>
+
+              <button
+                *ngIf="canReturn(record)"
+                class="btn btn-sm btn-outline-success"
+                (click)="returnBook(record)">
+                Return
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
+      <span class="text-muted">
+        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
+      </span>
+
+      <div>
+        <button
+          class="btn btn-sm btn-outline-secondary me-2"
+          [disabled]="page === 0"
+          (click)="previousPage()">
+          Previous
+        </button>
+
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          [disabled]="page + 1 >= totalPages"
+          (click)="nextPage()">
+          Next
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

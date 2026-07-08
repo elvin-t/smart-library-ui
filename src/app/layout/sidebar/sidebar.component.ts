@@ -47,13 +47,15 @@ export class SidebarComponent {
       label: 'Borrow Records',
       icon: 'bi bi-arrow-left-right',
       route: '/app/borrow-records',
-      permissions: [PERMISSIONS.BORROW_READ]
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: ['ADMIN', 'LIBRARIAN']
     },
     {
       label: 'My Borrows',
       icon: 'bi bi-person-lines-fill',
       route: '/app/my-borrows',
-      permissions: [PERMISSIONS.BORROW_READ]
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: ['MEMBER']
     },
     {
       label: 'Fines',
