@@ -214,6 +214,39 @@ Fines page
   loadComponent: () =>
     import('./features/fines/pages/fine-detail/fine-detail.component')
       .then(m => m.FineDetailComponent)
+},
+
+/* User Page */
+
+{
+  path: 'users',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.USER_READ]
+  },
+  loadComponent: () =>
+    import('./features/users/pages/user-list/user-list.component')
+      .then(m => m.UserListComponent)
+},
+{
+  path: 'users/:id',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.USER_READ]
+  },
+  loadComponent: () =>
+    import('./features/users/pages/user-detail/user-detail.component')
+      .then(m => m.UserDetailComponent)
+},
+{
+  path: 'users/:id/edit',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.USER_WRITE]
+  },
+  loadComponent: () =>
+    import('./features/users/pages/user-edit/user-edit.component')
+      .then(m => m.UserEditComponent)
 }
 
     ]

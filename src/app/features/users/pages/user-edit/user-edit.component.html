@@ -1,0 +1,85 @@
+<div class="user-edit-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Edit User</h3>
+      <p class="text-muted mb-0">
+        Update user profile and membership status.
+      </p>
+    </div>
+
+    <a [routerLink]="['/app/users', userId]" class="btn btn-outline-secondary">
+      Back
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2">Loading user...</p>
+  </div>
+
+  <form
+    *ngIf="!isLoading"
+    class="form-card mt-3"
+    [formGroup]="userForm"
+    (ngSubmit)="save()">
+
+    <div class="row g-3">
+
+      <div class="col-md-6">
+        <label class="form-label">Full Name</label>
+        <input class="form-control" formControlName="fullName" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Phone</label>
+        <input class="form-control" formControlName="phone" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Membership Type</label>
+
+        <select class="form-select" formControlName="membershipType">
+          <option value="">Select membership type</option>
+
+          <option *ngFor="let type of membershipTypes" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Membership Status</label>
+
+        <select class="form-select" formControlName="membershipStatus">
+          <option value="">Select membership status</option>
+
+          <option *ngFor="let status of membershipStatuses" [value]="status.value">
+            {{ status.label }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="form-actions mt-4">
+      <button
+        type="button"
+        [routerLink]="['/app/users', userId]"
+        class="btn btn-outline-secondary">
+        Cancel
+      </button>
+
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+        <span *ngIf="!isSaving">Update User</span>
+
+        <span *ngIf="isSaving">
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Updating...
+        </span>
+      </button>
+    </div>
+
+  </form>
+
+</div>

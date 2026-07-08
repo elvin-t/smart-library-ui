@@ -1,0 +1,88 @@
+<div class="user-detail-page">
+
+  <div class="page-header">
+    <div>
+      <h3>User Details</h3>
+      <p class="text-muted mb-0">
+        View complete user profile and membership information.
+      </p>
+    </div>
+
+    <div>
+      <a routerLink="/app/users" class="btn btn-outline-secondary me-2">
+        Back
+      </a>
+
+      <a
+        *ngIf="user && canEdit()"
+        [routerLink]="['/app/users', user.id, 'edit']"
+        class="btn btn-primary">
+        Edit User
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2">Loading user details...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading && user">
+
+    <div class="profile-card mt-3">
+      <div class="profile-header">
+        <div class="avatar">
+          <i class="bi bi-person"></i>
+        </div>
+
+        <div>
+          <h4>{{ user.fullName }}</h4>
+          <p class="text-muted mb-0">{{ user.email }}</p>
+        </div>
+
+        <span class="badge ms-auto" [ngClass]="getStatusClass(user.membershipStatus)">
+          {{ user.membershipStatus }}
+        </span>
+      </div>
+
+      <div class="row g-4 mt-3">
+        <div class="col-md-4">
+          <label>User ID</label>
+          <p>{{ user.id }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Email</label>
+          <p>{{ user.email }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Phone</label>
+          <p>{{ user.phone || '-' }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Membership Type</label>
+          <p>{{ user.membershipType }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Membership Status</label>
+          <p>{{ user.membershipStatus }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Created At</label>
+          <p>{{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Updated At</label>
+          <p>{{ user.updatedAt ? (user.updatedAt | date:'medium') : '-' }}</p>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

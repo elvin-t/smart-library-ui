@@ -1,0 +1,125 @@
+<div class="user-list-page">
+
+  <div class="page-header">
+    <div>
+      <h3>User Management</h3>
+      <p class="text-muted mb-0">
+        View and manage library user profiles and membership status.
+      </p>
+    </div>
+  </div>
+
+  <div class="filter-card mt-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Membership Status</label>
+
+        <select
+          class="form-select"
+          [(ngModel)]="selectedStatus"
+          (change)="applyStatusFilter()">
+
+          <option value="">All Status</option>
+
+          <option *ngFor="let status of membershipStatuses" [value]="status.value">
+            {{ status.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100" (click)="clearFilter()">
+          Clear Filter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card mt-3">
+
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="text-muted mt-2">Loading users...</p>
+    </div>
+
+    <div *ngIf="!isLoading && users.length === 0" class="empty-state">
+      <i class="bi bi-people"></i>
+      <h5>No users found</h5>
+      <p class="text-muted">No user records available for the selected filter.</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!isLoading && users.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Membership Type</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>
+              <div class="fw-semibold">{{ user.fullName }}</div>
+              <small class="text-muted">ID: {{ user.id }}</small>
+            </td>
+
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone || '-' }}</td>
+            <td>{{ user.membershipType }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(user.membershipStatus)">
+                {{ user.membershipStatus }}
+              </span>
+            </td>
+
+            <td>{{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}</td>
+
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewUser(user)">
+                View
+              </button>
+
+              <button
+                *ngIf="canEdit()"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="editUser(user)">
+                Edit
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
+      <span class="text-muted">
+        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
+      </span>
+
+      <div>
+        <button
+          class="btn btn-sm btn-outline-secondary me-2"
+          [disabled]="page === 0"
+          (click)="previousPage()">
+          Previous
+        </button>
+
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          [disabled]="page + 1 >= totalPages"
+          (click)="nextPage()">
+          Next
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

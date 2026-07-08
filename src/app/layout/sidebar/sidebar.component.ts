@@ -29,7 +29,8 @@ export class SidebarComponent {
       label: 'Users',
       icon: 'bi bi-people',
       route: '/app/users',
-      permissions: [PERMISSIONS.USER_READ]
+      permissions: [PERMISSIONS.USER_READ],
+      roles: ['ADMIN', 'LIBRARIAN']
     },
     {
       label: 'Books',
