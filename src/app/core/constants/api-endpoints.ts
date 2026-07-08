@@ -15,7 +15,9 @@ export const API_ENDPOINTS = {
   },
 
   INVENTORY: {
-    BASE: '/api/books/inventory'
+    BASE: '/api/books/inventory',
+    LOW_STOCK: '/api/books/inventory/low-stock',
+    UNAVAILABLE: '/api/books/inventory/unavailable'
   },
 
   BORROW: {

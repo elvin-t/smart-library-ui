@@ -1,5 +1,6 @@
 .sidebar {
-  width: 260px;
+  width: 270px;
+  min-height: 100vh;
   background: #111827;
   color: #ffffff;
   display: flex;
@@ -7,22 +8,40 @@
 }
 
 .sidebar-brand {
-  height: 72px;
+  height: 76px;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 20px;
-  font-size: 20px;
-  font-weight: 700;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   i {
-    font-size: 24px;
+    font-size: 22px;
   }
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.brand-subtitle {
+  color: #9ca3af;
 }
 
 .sidebar-nav {
   padding: 16px;
+  flex: 1;
 }
 
 .nav-link {
@@ -31,9 +50,14 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   text-decoration: none;
   margin-bottom: 6px;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 18px;
+  }
 
   &:hover {
     background: #1f2937;
@@ -44,4 +68,10 @@
     background: #2563eb;
     color: #ffffff;
   }
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  color: #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }

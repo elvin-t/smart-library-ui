@@ -1,0 +1,70 @@
+<div class="book-detail-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Book Details</h3>
+      <p class="text-muted mb-0">View complete book information.</p>
+    </div>
+
+    <div>
+      <a routerLink="/app/books" class="btn btn-outline-secondary me-2">
+        Back
+      </a>
+
+      <a
+        *ngIf="book && permissionService.hasPermission(permissions.BOOK_WRITE)"
+        [routerLink]="['/app/books', book.id, 'edit']"
+        class="btn btn-primary">
+        Edit
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <div *ngIf="!isLoading && book" class="detail-card mt-3">
+    <div class="book-title-section">
+      <h3>{{ book.title }}</h3>
+      <p class="text-muted">by {{ book.author }}</p>
+
+      <span class="badge" [ngClass]="book.available ? 'text-bg-success' : 'text-bg-danger'">
+        {{ book.available ? 'Available' : 'Unavailable' }}
+      </span>
+    </div>
+
+    <div class="row g-4 mt-2">
+      <div class="col-md-6">
+        <label>ISBN</label>
+        <p>{{ book.isbn }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <label>Genre</label>
+        <p>{{ book.genreDisplayName || book.genre }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <label>Total Copies</label>
+        <p>{{ book.totalCopies }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <label>Available Copies</label>
+        <p>{{ book.availableCopies }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <label>Publication Date</label>
+        <p>{{ book.publicationDate || '-' }}</p>
+      </div>
+
+      <div class="col-md-12">
+        <label>Description</label>
+        <p>{{ book.description || 'No description available.' }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>

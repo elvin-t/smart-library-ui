@@ -1,42 +1,113 @@
-<div class="container-fluid">
-  <h3>Dashboard</h3>
-  <p class="text-muted">Welcome to Smart Library Platform.</p>
+<div class="dashboard-page">
 
-  <div class="row g-3 mt-2">
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Total Books</h6>
-          <h3>--</h3>
+  <section class="dashboard-header">
+    <div>
+      <span class="role-badge">
+        {{ primaryRole }}
+      </span>
+
+      <h2 class="mt-2 mb-1">{{ welcomeTitle }}</h2>
+
+      <p class="text-muted mb-0">
+        {{ welcomeDescription }}
+      </p>
+    </div>
+
+    <div class="user-summary">
+      <div class="user-avatar">
+        <i class="bi bi-person"></i>
+      </div>
+
+      <div>
+        <div class="fw-semibold">{{ userEmail }}</div>
+        <small class="text-muted">{{ roles.join(', ') }}</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- Admin specific panel -->
+  <section class="role-panel admin-panel" *ngIf="showAdminPanel()">
+    <div>
+      <h5>Admin Control Panel</h5>
+      <p class="mb-0">
+        You have full access to users, books, inventory, borrow records, and system operations.
+      </p>
+    </div>
+
+    <i class="bi bi-shield-check"></i>
+  </section>
+
+  <!-- Librarian specific panel -->
+  <section class="role-panel librarian-panel" *ngIf="showLibrarianPanel()">
+    <div>
+      <h5>Librarian Workspace</h5>
+      <p class="mb-0">
+        You can manage books, inventory, borrow records, returns, and overdue fines.
+      </p>
+    </div>
+
+    <i class="bi bi-journal-check"></i>
+  </section>
+
+  <!-- Member specific panel -->
+  <section class="role-panel member-panel" *ngIf="showMemberPanel()">
+    <div>
+      <h5>Member Portal</h5>
+      <p class="mb-0">
+        You can browse books, view your borrow history, track due dates, and check fines.
+      </p>
+    </div>
+
+    <i class="bi bi-person-badge"></i>
+  </section>
+
+  <!-- Permission based cards -->
+  <section class="row g-4 mt-2">
+    <div class="col-xl-4 col-md-6" *ngFor="let card of visibleCards()">
+      <div class="dashboard-card" [ngClass]="card.colorClass">
+        <div class="card-icon">
+          <i [class]="card.icon"></i>
+        </div>
+
+        <div class="card-content">
+          <h6>{{ card.title }}</h6>
+          <h3>{{ card.value }}</h3>
+          <p>{{ card.description }}</p>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Borrowed Books</h6>
-          <h3>--</h3>
-        </div>
-      </div>
+  <!-- Permission based quick actions -->
+  <section class="quick-actions mt-4">
+    <div class="section-title">
+      <h5>Quick Actions</h5>
+      <p class="text-muted mb-0">
+        Actions available based on your role and permissions.
+      </p>
     </div>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Overdue</h6>
-          <h3>--</h3>
-        </div>
+    <div class="row g-3 mt-1">
+      <div class="col-xl-3 col-md-4 col-sm-6" *ngFor="let action of visibleQuickActions()">
+        <a [routerLink]="action.route" class="quick-action-card">
+          <i [class]="action.icon"></i>
+          <span>{{ action.label }}</span>
+        </a>
       </div>
     </div>
+  </section>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Pending Fines</h6>
-          <h3>--</h3>
-        </div>
-      </div>
+  <!-- Active permissions -->
+  <section class="permission-panel mt-4">
+    <h6 class="mb-2">Active Permissions</h6>
+
+    <div class="permission-list">
+      <span
+        *ngFor="let permission of permissions"
+        class="badge rounded-pill text-bg-light permission-badge">
+        {{ permission }}
+      </span>
     </div>
-  </div>
+  </section>
+
 </div>

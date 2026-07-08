@@ -1,0 +1,28 @@
+.page-header,
+.detail-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.book-title-section {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 18px;
+}
+
+label {
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+p {
+  margin-bottom: 0;
+}

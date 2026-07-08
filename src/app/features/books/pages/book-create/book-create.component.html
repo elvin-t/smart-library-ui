@@ -1,0 +1,78 @@
+<div class="book-form-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Create Book</h3>
+      <p class="text-muted mb-0">Add a new book to the library catalog.</p>
+    </div>
+
+    <a routerLink="/app/books" class="btn btn-outline-secondary">
+      Back
+    </a>
+  </div>
+
+  <form class="form-card mt-3" [formGroup]="bookForm" (ngSubmit)="save()">
+    <div class="row g-3">
+
+      <div class="col-md-6">
+        <label class="form-label">ISBN</label>
+        <input class="form-control" formControlName="isbn" placeholder="9780134685991" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Genre</label>
+        <select class="form-select" formControlName="genre">
+          <option value="">Select genre</option>
+          <option *ngFor="let genre of genres" [value]="genre.value">
+            {{ genre.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Title</label>
+        <input class="form-control" formControlName="title" placeholder="Book title" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Author</label>
+        <input class="form-control" formControlName="author" placeholder="Author name" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Total Copies</label>
+        <input type="number" class="form-control" formControlName="totalCopies" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Available Copies</label>
+        <input type="number" class="form-control" formControlName="availableCopies" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Publication Date</label>
+        <input type="date" class="form-control" formControlName="publicationDate" />
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Description</label>
+        <textarea rows="4" class="form-control" formControlName="description"></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions mt-4">
+      <button type="button" routerLink="/app/books" class="btn btn-outline-secondary">
+        Cancel
+      </button>
+
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+        <span *ngIf="!isSaving">Create Book</span>
+        <span *ngIf="isSaving">
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Saving...
+        </span>
+      </button>
+    </div>
+  </form>
+
+</div>

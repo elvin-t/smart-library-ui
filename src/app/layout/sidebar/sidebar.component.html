@@ -1,38 +1,28 @@
 <aside class="sidebar">
   <div class="sidebar-brand">
-    <i class="bi bi-book-half"></i>
-    <span>Smart Library</span>
+    <div class="brand-icon">
+      <i class="bi bi-book-half"></i>
+    </div>
+
+    <div>
+      <div class="brand-title">Smart Library</div>
+      <small class="brand-subtitle">Platform</small>
+    </div>
   </div>
 
   <nav class="sidebar-nav">
-    <a routerLink="/app/dashboard" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-speedometer2"></i>
-      Dashboard
-    </a>
+    <a
+      *ngFor="let item of visibleMenuItems()"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="nav-link">
 
-    <a routerLink="/app/books" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-journal-bookmark"></i>
-      Books
-    </a>
-
-    <a routerLink="/app/inventory" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-box-seam"></i>
-      Inventory
-    </a>
-
-    <a routerLink="/app/borrow-records" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-arrow-left-right"></i>
-      Borrow Records
-    </a>
-
-    <a routerLink="/app/fines" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-cash-coin"></i>
-      Fines
-    </a>
-
-    <a routerLink="/app/notifications" routerLinkActive="active" class="nav-link">
-      <i class="bi bi-bell"></i>
-      Notifications
+      <i [class]="item.icon"></i>
+      <span>{{ item.label }}</span>
     </a>
   </nav>
+
+  <div class="sidebar-footer">
+    <small>Role-based navigation</small>
+  </div>
 </aside>

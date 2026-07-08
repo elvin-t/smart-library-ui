@@ -55,10 +55,51 @@ export const routes: Routes = [
             .then(m => m.DashboardComponent)
       },
 
-      /**
-       * User Management
-       * ADMIN / permitted users only
+         /**
+       * Book page
        */
+
+      {
+  path: 'books',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BOOK_READ]
+  },
+  loadComponent: () =>
+    import('./features/books/pages/book-list/book-list.component')
+      .then(m => m.BookListComponent)
+},
+{
+  path: 'books/create',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BOOK_WRITE]
+  },
+  loadComponent: () =>
+    import('./features/books/pages/book-create/book-create.component')
+      .then(m => m.BookCreateComponent)
+},
+{
+  path: 'books/:id',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BOOK_READ]
+  },
+  loadComponent: () =>
+    import('./features/books/pages/book-detail/book-detail.component')
+      .then(m => m.BookDetailComponent)
+},
+{
+  path: 'books/:id/edit',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BOOK_WRITE]
+  },
+  loadComponent: () =>
+    import('./features/books/pages/book-edit/book-edit.component')
+      .then(m => m.BookEditComponent)
+}
+
     ]
   },
   /**
