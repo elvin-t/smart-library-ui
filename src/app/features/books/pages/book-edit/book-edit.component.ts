@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
@@ -27,16 +27,9 @@ export class BookEditComponent implements OnInit {
   genres = BOOK_GENRES;
   isLoading = false;
   isSaving = false;
+  bookForm!: FormGroup;
 
-  bookForm = this.formBuilder.group({
-    title: ['', [Validators.required, Validators.maxLength(200)]],
-    author: ['', [Validators.required, Validators.maxLength(100)]],
-    description: [''],
-    genre: ['', [Validators.required]],
-    totalCopies: [1, [Validators.required, Validators.min(1)]],
-    availableCopies: [0, [Validators.required, Validators.min(0)]],
-    publicationDate: ['']
-  });
+  
 
   constructor(
     private formBuilder: FormBuilder,
@@ -47,6 +40,16 @@ export class BookEditComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.bookForm = this.formBuilder.group({
+    title: ['', [Validators.required, Validators.maxLength(200)]],
+    author: ['', [Validators.required, Validators.maxLength(100)]],
+    description: [''],
+    genre: ['', [Validators.required]],
+    totalCopies: [1, [Validators.required, Validators.min(1)]],
+    availableCopies: [0, [Validators.required, Validators.min(0)]],
+    publicationDate: ['']
+  });
+  
     this.bookId = Number(this.route.snapshot.paramMap.get('id'));
     this.loadBook();
   }

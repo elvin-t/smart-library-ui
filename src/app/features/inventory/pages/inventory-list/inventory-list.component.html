@@ -1,0 +1,103 @@
+<div class="inventory-list-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Inventory Management</h3>
+      <p class="text-muted mb-0">
+        Search and manage book inventory by book ID.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/app/inventory/low-stock" class="btn btn-outline-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        Low Stock
+      </a>
+    </div>
+  </div>
+
+  <div class="search-card mt-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label">Book ID</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="bookId"
+          placeholder="Enter book ID"
+          (keyup.enter)="searchInventory()"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100" (click)="searchInventory()">
+          <i class="bi bi-search me-1"></i>
+          Search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2">Loading inventory...</p>
+  </div>
+
+  <div *ngIf="!isLoading && !inventory" class="empty-state mt-3">
+    <i class="bi bi-box-seam"></i>
+    <h5>No inventory selected</h5>
+    <p class="text-muted">Enter a book ID to view inventory details.</p>
+  </div>
+
+  <div *ngIf="!isLoading && inventory" class="inventory-card mt-3">
+    <div class="inventory-header">
+      <div>
+        <h4>{{ inventory.title }}</h4>
+        <p class="text-muted mb-0">by {{ inventory.author }}</p>
+      </div>
+
+      <span class="badge" [ngClass]="getAvailabilityClass(inventory)">
+        {{ getAvailabilityText(inventory) }}
+      </span>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <div class="metric-card">
+          <span>Total Copies</span>
+          <h3>{{ inventory.totalCopies }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card success">
+          <span>Available</span>
+          <h3>{{ inventory.availableCopies }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card warning">
+          <span>Borrowed</span>
+          <h3>{{ inventory.borrowedCopies }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card info">
+          <span>ISBN</span>
+          <h6>{{ inventory.isbn }}</h6>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-end mt-4">
+      <button
+        class="btn btn-primary"
+        (click)="viewDetails(inventory.bookId)">
+        Manage Inventory
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,99 @@
+<div class="low-stock-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Low Stock Books</h3>
+      <p class="text-muted mb-0">
+        View books where available copies are below or equal to the threshold.
+      </p>
+    </div>
+
+    <button class="btn btn-outline-secondary" routerLink="/app/inventory">
+      Back
+    </button>
+  </div>
+
+  <div class="filter-card mt-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Threshold</label>
+        <input type="number" class="form-control" [(ngModel)]="threshold" />
+      </div>
+
+      <div class="col-md-3">
+        <button class="btn btn-warning w-100" (click)="applyThreshold()">
+          Apply
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card mt-3">
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-warning"></div>
+      <p class="text-muted mt-2">Loading low-stock books...</p>
+    </div>
+
+    <div *ngIf="!isLoading && inventories.length === 0" class="empty-state">
+      <i class="bi bi-check-circle"></i>
+      <h5>No low-stock books</h5>
+      <p class="text-muted">Inventory looks healthy for the selected threshold.</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!isLoading && inventories.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>ISBN</th>
+            <th>Total</th>
+            <th>Available</th>
+            <th>Borrowed</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of inventories">
+            <td>
+              <div class="fw-semibold">{{ item.title }}</div>
+              <small class="text-muted">{{ item.author }}</small>
+            </td>
+
+            <td>{{ item.isbn }}</td>
+            <td>{{ item.totalCopies }}</td>
+            <td>
+              <span class="badge text-bg-warning">
+                {{ item.availableCopies }}
+              </span>
+            </td>
+            <td>{{ item.borrowedCopies }}</td>
+
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" (click)="viewInventory(item.bookId)">
+                Manage
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
+      <span class="text-muted">
+        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
+      </span>
+
+      <div>
+        <button class="btn btn-sm btn-outline-secondary me-2" [disabled]="page === 0" (click)="previousPage()">
+          Previous
+        </button>
+
+        <button class="btn btn-sm btn-outline-secondary" [disabled]="page + 1 >= totalPages" (click)="nextPage()">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

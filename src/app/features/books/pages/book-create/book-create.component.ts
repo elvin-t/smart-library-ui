@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
@@ -19,12 +19,21 @@ import { CreateBookRequest } from '../../models/create-book-request.model';
   templateUrl: './book-create.component.html',
   styleUrl: './book-create.component.scss'
 })
-export class BookCreateComponent {
+export class BookCreateComponent implements OnInit{
+
+  bookForm!: FormGroup;
+    constructor(
+    private formBuilder: FormBuilder,
+    private bookApiService: BookApiService,
+    private router: Router,
+    private toastr: ToastrService
+  ) {}
 
   genres = BOOK_GENRES;
   isSaving = false;
 
-  bookForm = this.formBuilder.group({
+  ngOnInit(): void {
+    this.bookForm = this.formBuilder.group({
     isbn: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(20)]],
     title: ['', [Validators.required, Validators.maxLength(200)]],
     author: ['', [Validators.required, Validators.maxLength(100)]],
@@ -34,13 +43,9 @@ export class BookCreateComponent {
     availableCopies: [1, [Validators.required, Validators.min(0)]],
     publicationDate: ['']
   });
+  }
 
-  constructor(
-    private formBuilder: FormBuilder,
-    private bookApiService: BookApiService,
-    private router: Router,
-    private toastr: ToastrService
-  ) {}
+
 
   save(): void {
     if (this.bookForm.invalid) {

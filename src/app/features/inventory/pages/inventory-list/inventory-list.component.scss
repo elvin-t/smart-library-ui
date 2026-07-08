@@ -1,0 +1,69 @@
+.page-header,
+.search-card,
+.inventory-card,
+.empty-state {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.empty-state {
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    color: #9ca3af;
+  }
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-card {
+  border-radius: 16px;
+  padding: 18px;
+  background: #eff6ff;
+  color: #1d4ed8;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  h3,
+  h6 {
+    margin-top: 8px;
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+
+  &.success {
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+
+  &.warning {
+    background: #fffbeb;
+    color: #f59e0b;
+  }
+
+  &.info {
+    background: #ecfeff;
+    color: #0891b2;
+  }
+}

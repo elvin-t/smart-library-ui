@@ -21,8 +21,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
 
 
-  
-private readonly formBuilder = inject(FormBuilder);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
