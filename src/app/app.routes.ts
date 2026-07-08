@@ -178,6 +178,31 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./features/borrow/pages/my-borrows/my-borrows.component')
       .then(m => m.MyBorrowsComponent)
+},
+
+/* 
+Fines page
+*/
+
+{
+  path: 'fines',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BORROW_READ]
+  },
+  loadComponent: () =>
+    import('./features/fines/pages/fine-list/fine-list.component')
+      .then(m => m.FineListComponent)
+},
+{
+  path: 'fines/:borrowRecordId',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.BORROW_READ]
+  },
+  loadComponent: () =>
+    import('./features/fines/pages/fine-detail/fine-detail.component')
+      .then(m => m.FineDetailComponent)
 }
 
     ]

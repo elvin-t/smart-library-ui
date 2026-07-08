@@ -1,0 +1,26 @@
+.page-header,
+.filter-card,
+.table-card,
+.empty-state {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.empty-state {
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    color: #9ca3af;
+  }
+}
+
+.pagination-bar {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

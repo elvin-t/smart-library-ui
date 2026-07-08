@@ -61,7 +61,8 @@ export class SidebarComponent {
       label: 'Fines',
       icon: 'bi bi-cash-coin',
       route: '/app/fines',
-      permissions: [PERMISSIONS.BORROW_READ]
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: ['ADMIN', 'LIBRARIAN', 'MEMBER']
     },
     {
       label: 'Notifications',

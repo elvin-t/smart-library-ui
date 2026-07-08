@@ -1,0 +1,102 @@
+<div class="fine-detail-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Fine Details</h3>
+      <p class="text-muted mb-0">
+        View overdue fine calculation and payment status.
+      </p>
+    </div>
+
+    <div>
+      <a routerLink="/app/fines" class="btn btn-outline-secondary me-2">
+        Back
+      </a>
+
+      <button
+        *ngIf="canPayFine()"
+        class="btn btn-primary"
+        [disabled]="isSaving"
+        (click)="markFineAsPaid()">
+        Mark Fine as Paid
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2">Loading fine details...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading && fine">
+
+    <div class="fine-summary mt-3">
+      <div>
+        <h4>Borrow Record #{{ fine.borrowRecordId }}</h4>
+        <p class="text-muted mb-0">
+          User ID: {{ fine.userId }} · Book ID: {{ fine.bookId }}
+        </p>
+      </div>
+
+      <span class="badge" [ngClass]="getPaymentStatusClass()">
+        {{ getPaymentStatusText() }}
+      </span>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <div class="metric-card">
+          <span>Overdue Days</span>
+          <h3>{{ fine.overdueDays }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card warning">
+          <span>Fine Per Day</span>
+          <h3>{{ fine.finePerDay | currency:'INR' }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card danger">
+          <span>Total Fine</span>
+          <h3>{{ fine.fineAmount | currency:'INR' }}</h3>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="metric-card success">
+          <span>Payment Status</span>
+          <h5>{{ getPaymentStatusText() }}</h5>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-card mt-3">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <label>Borrowed At</label>
+          <p>{{ fine.borrowedAt | date:'medium' }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Due Date</label>
+          <p>{{ fine.dueDate | date:'medium' }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Returned At</label>
+          <p>{{ fine.returnedAt ? (fine.returnedAt | date:'medium') : '-' }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Fine Paid At</label>
+          <p>{{ fine.finePaidAt ? (fine.finePaidAt | date:'medium') : '-' }}</p>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>
