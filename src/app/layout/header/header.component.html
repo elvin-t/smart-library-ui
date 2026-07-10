@@ -5,9 +5,14 @@
   </div>
 
   <div class="user-section">
-    <div class="text-end">
-      <div class="fw-semibold">{{ authService.getEmail() || 'User' }}</div>
-      <small class="text-muted">{{ authService.getRoles().join(', ') }}</small>
+    <div class="user-info text-end">
+      <div class="fw-semibold">
+        {{ authService.getEmail() || 'User' }}
+      </div>
+
+      <small class="role-badge">
+        {{ primaryRole }}
+      </small>
     </div>
 
     <button type="button" class="btn btn-outline-danger btn-sm" (click)="logout()">

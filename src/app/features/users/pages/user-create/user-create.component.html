@@ -1,0 +1,137 @@
+<div class="user-create-page">
+
+  <div class="page-header">
+    <div>
+      <h3>Create User</h3>
+      <p class="text-muted mb-0">
+        Admin can create Member or Librarian users with login access.
+      </p>
+    </div>
+
+    <a routerLink="/app/users" class="btn btn-outline-secondary">
+      Back
+    </a>
+  </div>
+
+  <form class="form-card mt-3" [formGroup]="userForm" (ngSubmit)="createUser()">
+
+    <div class="row g-3">
+
+      <div class="col-md-6">
+        <label class="form-label required">Full Name</label>
+
+        <input
+          type="text"
+          class="form-control"
+          formControlName="fullName"
+          placeholder="Enter full name"
+          [class.is-invalid]="fullNameInvalid"
+        />
+
+        <div class="invalid-feedback" *ngIf="fullNameInvalid">
+          Full name is required.
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label required">Email</label>
+
+        <input
+          type="email"
+          class="form-control"
+          formControlName="email"
+          placeholder="user@example.com"
+          [class.is-invalid]="emailInvalid"
+        />
+
+        <div class="invalid-feedback" *ngIf="emailInvalid">
+          Please enter a valid email.
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Phone</label>
+
+        <input
+          type="text"
+          class="form-control"
+          formControlName="phone"
+          placeholder="Enter phone number"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label required">Role</label>
+
+        <select
+          class="form-select"
+          formControlName="role"
+          [class.is-invalid]="roleInvalid">
+
+          <option *ngFor="let role of roles" [value]="role.value">
+            {{ role.label }}
+          </option>
+        </select>
+
+        <div class="invalid-feedback" *ngIf="roleInvalid">
+          Role is required.
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label required">Password</label>
+
+        <div class="input-group">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            class="form-control"
+            formControlName="password"
+            placeholder="Minimum 6 characters"
+            [class.is-invalid]="passwordInvalid"
+          />
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="togglePassword()">
+            <i
+              class="bi"
+              [class.bi-eye]="!showPassword"
+              [class.bi-eye-slash]="showPassword">
+            </i>
+          </button>
+
+          <div class="invalid-feedback" *ngIf="passwordInvalid">
+            Password must be at least 6 characters.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="info-box mt-4">
+      <i class="bi bi-info-circle me-2"></i>
+      This will create login credentials in Auth Service and profile data in User Service.
+    </div>
+
+    <div class="form-actions mt-4">
+      <button
+        type="button"
+        routerLink="/app/users"
+        class="btn btn-outline-secondary">
+        Cancel
+      </button>
+
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+        <span *ngIf="!isSaving">Create User</span>
+
+        <span *ngIf="isSaving">
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Creating...
+        </span>
+      </button>
+    </div>
+
+  </form>
+
+</div>

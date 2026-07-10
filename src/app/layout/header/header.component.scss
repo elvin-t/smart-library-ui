@@ -1,5 +1,5 @@
 .app-header {
-  height: 72px;
+  height: 76px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   padding: 0 24px;
@@ -11,5 +11,15 @@
 .user-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+}
+
+.role-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 11px;
 }

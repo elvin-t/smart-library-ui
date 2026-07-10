@@ -4,9 +4,18 @@
     <div>
       <h3>User Management</h3>
       <p class="text-muted mb-0">
-        View and manage library user profiles and membership status.
+        View and manage library user profiles, membership status, and login access.
       </p>
     </div>
+
+    <a
+      *ngIf="canCreate()"
+      routerLink="/app/users/create"
+      class="btn btn-primary">
+
+      <i class="bi bi-plus-circle me-1"></i>
+      Create User
+    </a>
   </div>
 
   <div class="filter-card mt-3">
@@ -42,13 +51,13 @@
       <p class="text-muted mt-2">Loading users...</p>
     </div>
 
-    <div *ngIf="!isLoading && users.length === 0" class="empty-state">
+    <div *ngIf="!isLoading && (users ?? []).length === 0" class="empty-state">
       <i class="bi bi-people"></i>
       <h5>No users found</h5>
       <p class="text-muted">No user records available for the selected filter.</p>
     </div>
 
-    <div class="table-responsive" *ngIf="!isLoading && users.length > 0">
+    <div class="table-responsive" *ngIf="!isLoading && (users ?? []).length > 0">
       <table class="table align-middle">
         <thead>
           <tr>
@@ -56,7 +65,8 @@
             <th>Email</th>
             <th>Phone</th>
             <th>Membership Type</th>
-            <th>Status</th>
+            <th>Membership Status</th>
+            <th>Login Status</th>
             <th>Created At</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -79,18 +89,42 @@
               </span>
             </td>
 
-            <td>{{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}</td>
+            <td>
+              <span class="badge" [ngClass]="getLoginStatusClass(user)">
+                {{ getLoginStatusText(user) }}
+              </span>
+            </td>
+
+            <td>
+              {{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}
+            </td>
 
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewUser(user)">
+              <button
+                class="btn btn-sm btn-outline-primary me-1"
+                (click)="viewUser(user)">
                 View
               </button>
 
               <button
                 *ngIf="canEdit()"
-                class="btn btn-sm btn-outline-secondary"
+                class="btn btn-sm btn-outline-secondary me-1"
                 (click)="editUser(user)">
                 Edit
+              </button>
+
+              <button
+                *ngIf="showActivateButton(user)"
+                class="btn btn-sm btn-outline-success me-1"
+                (click)="activateUser(user)">
+                Activate
+              </button>
+
+              <button
+                *ngIf="showDeactivateButton(user)"
+                class="btn btn-sm btn-outline-danger"
+                (click)="deactivateUser(user)">
+                Deactivate
               </button>
             </td>
           </tr>

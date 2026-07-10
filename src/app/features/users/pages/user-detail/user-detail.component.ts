@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 import { UserApiService } from '../../services/user-api.service';
+import { AdminUserApiService } from '../../services/admin-user-api.service';
 import { User } from '../../models/user.model';
 import { MembershipStatus } from '../../models/membership-status.model';
 
@@ -23,6 +25,8 @@ export class UserDetailComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly userApiService = inject(UserApiService);
+  private readonly adminUserApiService = inject(AdminUserApiService);
+  private readonly toastr = inject(ToastrService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -55,16 +59,93 @@ export class UserDetailComponent implements OnInit {
     return this.permissionService.hasPermission(this.permissions.USER_WRITE);
   }
 
+  canManageLogin(): boolean {
+    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
+  }
+
+  activateUser(): void {
+    if (!this.user) {
+      return;
+    }
+
+    const confirmed = confirm(`Activate login access for ${this.user.email}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.adminUserApiService.activateUser(this.user.id)
+      .subscribe({
+        next: response => {
+          this.toastr.success(response.message || 'User activated successfully');
+
+          if (this.user) {
+            this.user.active = response.active;
+          }
+
+          this.loadUser();
+        }
+      });
+  }
+
+  deactivateUser(): void {
+    if (!this.user) {
+      return;
+    }
+
+    const confirmed = confirm(`Deactivate login access for ${this.user.email}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.adminUserApiService.deactivateUser(this.user.id)
+      .subscribe({
+        next: response => {
+          this.toastr.success(response.message || 'User deactivated successfully');
+
+          if (this.user) {
+            this.user.active = response.active;
+          }
+
+          this.loadUser();
+        }
+      });
+  }
+
+  showActivateButton(): boolean {
+    return !!this.user &&
+      this.canManageLogin() &&
+      this.user.active === false;
+  }
+
+  showDeactivateButton(): boolean {
+    return !!this.user &&
+      this.canManageLogin() &&
+      this.user.active !== false;
+  }
+
   getStatusClass(status?: MembershipStatus): string {
     switch (status) {
       case MembershipStatus.ACTIVE:
         return 'text-bg-success';
+
       case MembershipStatus.SUSPENDED:
         return 'text-bg-warning';
+
       case MembershipStatus.EXPIRED:
         return 'text-bg-danger';
+
       default:
         return 'text-bg-secondary';
     }
+  }
+
+  getLoginStatusText(): string {
+    return this.user?.active === false ? 'Inactive' : 'Active';
+  }
+
+  getLoginStatusClass(): string {
+    return this.user?.active === false ? 'text-bg-danger' : 'text-bg-success';
   }
 }

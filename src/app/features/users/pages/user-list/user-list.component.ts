@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 import { UserApiService } from '../../services/user-api.service';
+import { AdminUserApiService } from '../../services/admin-user-api.service';
 import { User } from '../../models/user.model';
 import {
   MEMBERSHIP_STATUSES,
@@ -27,7 +29,9 @@ import { PERMISSIONS } from '../../../../core/constants/permissions';
 export class UserListComponent implements OnInit {
 
   private readonly userApiService = inject(UserApiService);
+  private readonly adminUserApiService = inject(AdminUserApiService);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -49,22 +53,28 @@ export class UserListComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
+    this.users = [];
 
     this.userApiService.getUsers(this.page, this.size)
       .subscribe({
         next: response => {
-          let content = response.content;
+          let content: User[] = response?.content ?? [];
 
           if (this.selectedStatus) {
-            content = content.filter(user => user.membershipStatus === this.selectedStatus);
+            content = content.filter(
+              user => user.membershipStatus === this.selectedStatus
+            );
           }
 
           this.users = content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
+          this.totalPages = response?.totalPages ?? 0;
+          this.totalElements = response?.totalElements ?? content.length;
           this.isLoading = false;
         },
         error: () => {
+          this.users = [];
+          this.totalPages = 0;
+          this.totalElements = 0;
           this.isLoading = false;
         }
       });
@@ -89,6 +99,42 @@ export class UserListComponent implements OnInit {
     this.router.navigate(['/app/users', user.id, 'edit']);
   }
 
+  activateUser(user: User): void {
+    const confirmed = confirm(`Activate login access for ${user.email}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.adminUserApiService.activateUser(user.id)
+      .subscribe({
+        next: response => {
+          this.toastr.success(response.message || 'User activated successfully');
+
+          user.active = response.active;
+          this.loadUsers();
+        }
+      });
+  }
+
+  deactivateUser(user: User): void {
+    const confirmed = confirm(`Deactivate login access for ${user.email}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.adminUserApiService.deactivateUser(user.id)
+      .subscribe({
+        next: response => {
+          this.toastr.success(response.message || 'User deactivated successfully');
+
+          user.active = response.active;
+          this.loadUsers();
+        }
+      });
+  }
+
   nextPage(): void {
     if (this.page + 1 < this.totalPages) {
       this.page++;
@@ -103,20 +149,47 @@ export class UserListComponent implements OnInit {
     }
   }
 
+  canCreate(): boolean {
+    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
+  }
+
   canEdit(): boolean {
     return this.permissionService.hasPermission(this.permissions.USER_WRITE);
+  }
+
+  canManageLogin(): boolean {
+    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
+  }
+
+  showActivateButton(user: User): boolean {
+    return this.canManageLogin() && user.active === false;
+  }
+
+  showDeactivateButton(user: User): boolean {
+    return this.canManageLogin() && user.active !== false;
   }
 
   getStatusClass(status: MembershipStatus): string {
     switch (status) {
       case MembershipStatus.ACTIVE:
         return 'text-bg-success';
+
       case MembershipStatus.SUSPENDED:
         return 'text-bg-warning';
+
       case MembershipStatus.EXPIRED:
         return 'text-bg-danger';
+
       default:
         return 'text-bg-secondary';
     }
+  }
+
+  getLoginStatusText(user: User): string {
+    return user.active === false ? 'Inactive' : 'Active';
+  }
+
+  getLoginStatusClass(user: User): string {
+    return user.active === false ? 'text-bg-danger' : 'text-bg-success';
   }
 }

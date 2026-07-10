@@ -10,6 +10,12 @@ export interface User {
   membershipType: MembershipType;
   membershipStatus: MembershipStatus;
 
+  /**
+   * Optional because this belongs to Auth Service.
+   * If backend returns active in user list/detail, UI can show correct login status.
+   */
+  active?: boolean;
+
   createdAt?: string;
   updatedAt?: string;
 }

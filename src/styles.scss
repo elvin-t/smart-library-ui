@@ -1,8 +1,12 @@
-/* You can add global styles to this file, and also import other style files */
 @use 'sass:color';
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
@@ -12,15 +16,92 @@ body {
   color: #111827;
 }
 
-.card {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #111827;
+}
+
+a {
+  text-decoration: none;
+}
+
+.card,
+.table-card,
+.form-card,
+.filter-card,
+.detail-card,
+.profile-card,
+.fine-card,
+.notification-card,
+.inventory-card {
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .btn {
   border-radius: 10px;
+  font-weight: 500;
+}
+
+.form-control,
+.form-select {
+  border-radius: 10px;
+  min-height: 44px;
+}
+
+textarea.form-control {
+  min-height: unset;
 }
 
 .table {
-  background: #ffffff;
+  margin-bottom: 0;
+
+  thead {
+    th {
+      color: #6b7280;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+  }
+
+  tbody {
+    td {
+      vertical-align: middle;
+      border-bottom: 1px solid #f1f5f9;
+    }
+  }
+}
+
+.badge {
+  font-weight: 600;
+}
+
+.text-muted {
+  color: #6b7280 !important;
+}
+
+.page-section {
+  margin-top: 20px;
+}
+
+.shadow-soft {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.required::after {
+  content: '*';
+  color: #dc2626;
+  margin-left: 4px;
 }

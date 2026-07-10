@@ -16,8 +16,9 @@ import {
   NotificationStatus
 } from '../../models/notification-status.model';
 
-import { AuthService } from '../../../../core/services/auth.service';
+
 import { PermissionService } from '../../../../core/services/permission.service';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-notification-list',

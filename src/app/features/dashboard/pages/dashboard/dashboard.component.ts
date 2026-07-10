@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 
@@ -8,6 +8,9 @@ import { DashboardCard } from '../../../../core/models/dashboard-card.model';
 import { QuickAction } from '../../../../core/models/quick-action.model';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
 import { ROLES } from '../../../../core/constants/roles';
+
+import { DashboardService } from '../../services/dashboard.service';
+import { DashboardSummary } from '../../models/dashboard-summary.model';
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
@@ -20,13 +23,17 @@ import { AuthService } from '../../../auth/services/auth.service';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+
+  private readonly dashboardService = inject(DashboardService);
+
+  isLoading = false;
 
   dashboardCards: DashboardCard[] = [
     {
       title: 'Users',
-      value: '--',
-      description: 'Manage registered library users',
+      value: 0,
+      description: 'Registered library users',
       icon: 'bi bi-people',
       colorClass: 'card-info',
       permissions: [PERMISSIONS.USER_READ],
@@ -34,16 +41,16 @@ export class DashboardComponent {
     },
     {
       title: 'Books',
-      value: '--',
-      description: 'View and manage book catalog',
+      value: 0,
+      description: 'Books available in catalog',
       icon: 'bi bi-journal-bookmark',
       colorClass: 'card-primary',
       permissions: [PERMISSIONS.BOOK_READ]
     },
     {
-      title: 'Inventory',
-      value: '--',
-      description: 'Track book stock and availability',
+      title: 'Low Stock',
+      value: 0,
+      description: 'Books with low available copies',
       icon: 'bi bi-box-seam',
       colorClass: 'card-success',
       permissions: [PERMISSIONS.INVENTORY_READ],
@@ -51,26 +58,27 @@ export class DashboardComponent {
     },
     {
       title: 'Borrow Records',
-      value: '--',
-      description: 'Monitor borrow and return activity',
+      value: 0,
+      description: 'Borrow and return activity',
       icon: 'bi bi-arrow-left-right',
       colorClass: 'card-warning',
       permissions: [PERMISSIONS.BORROW_READ]
     },
     {
-      title: 'Fines',
-      value: '--',
-      description: 'Track overdue fines and payments',
+      title: 'Pending Fines',
+      value: 0,
+      description: 'Unpaid overdue fine records',
       icon: 'bi bi-cash-coin',
       colorClass: 'card-danger',
       permissions: [PERMISSIONS.BORROW_READ]
     },
     {
       title: 'Notifications',
-      value: '--',
-      description: 'Borrow, return, and reminder alerts',
+      value: 0,
+      description: 'Borrow and return alerts',
       icon: 'bi bi-bell',
-      colorClass: 'card-secondary'
+      colorClass: 'card-secondary',
+      permissions: [PERMISSIONS.BORROW_READ]
     }
   ];
 
@@ -129,6 +137,52 @@ export class DashboardComponent {
     public authService: AuthService,
     public permissionService: PermissionService
   ) {}
+
+  ngOnInit(): void {
+    this.loadDashboardValues();
+  }
+
+  loadDashboardValues(): void {
+    this.isLoading = true;
+
+    this.dashboardService.loadDashboardSummary()
+      .subscribe({
+        next: summary => {
+          this.updateCardValues(summary);
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        }
+      });
+  }
+
+  private updateCardValues(summary: DashboardSummary): void {
+    this.dashboardCards = this.dashboardCards.map(card => {
+      switch (card.title) {
+        case 'Users':
+          return { ...card, value: summary.totalUsers };
+
+        case 'Books':
+          return { ...card, value: summary.totalBooks };
+
+        case 'Low Stock':
+          return { ...card, value: summary.lowStockBooks };
+
+        case 'Borrow Records':
+          return { ...card, value: summary.borrowRecords };
+
+        case 'Pending Fines':
+          return { ...card, value: summary.pendingFines };
+
+        case 'Notifications':
+          return { ...card, value: summary.notifications };
+
+        default:
+          return card;
+      }
+    });
+  }
 
   get userEmail(): string {
     return this.authService.getEmail() ?? 'User';

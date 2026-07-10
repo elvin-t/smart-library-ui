@@ -1,0 +1,22 @@
+.empty-state {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+
+  i {
+    font-size: 48px;
+    color: #9ca3af;
+    margin-bottom: 14px;
+  }
+
+  h5 {
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}

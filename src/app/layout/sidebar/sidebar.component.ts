@@ -30,7 +30,7 @@ export class SidebarComponent {
       icon: 'bi bi-people',
       route: '/app/users',
       permissions: [PERMISSIONS.USER_READ],
-      roles: ['ADMIN', 'LIBRARIAN']
+      roles: ['ADMIN']
     },
     {
       label: 'Books',
@@ -42,7 +42,8 @@ export class SidebarComponent {
       label: 'Inventory',
       icon: 'bi bi-box-seam',
       route: '/app/inventory',
-      permissions: [PERMISSIONS.INVENTORY_READ]
+      permissions: [PERMISSIONS.INVENTORY_READ],
+      roles: ['ADMIN', 'LIBRARIAN']
     },
     {
       label: 'Borrow Records',
@@ -62,15 +63,14 @@ export class SidebarComponent {
       label: 'Fines',
       icon: 'bi bi-cash-coin',
       route: '/app/fines',
-      permissions: [PERMISSIONS.BORROW_READ],
-      roles: ['ADMIN', 'LIBRARIAN', 'MEMBER']
+      permissions: [PERMISSIONS.BORROW_READ]
     },
     {
-  label: 'Notifications',
-  icon: 'bi bi-bell',
-  route: '/app/notifications',
-  permissions: [PERMISSIONS.BORROW_READ]
-}
+      label: 'Notifications',
+      icon: 'bi bi-bell',
+      route: '/app/notifications',
+      permissions: [PERMISSIONS.BORROW_READ]
+    }
   ];
 
   constructor(public permissionService: PermissionService) {}

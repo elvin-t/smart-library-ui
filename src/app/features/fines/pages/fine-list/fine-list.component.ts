@@ -9,17 +9,16 @@ import { FINE_STATUSES, FineStatus } from '../../models/fine-status.model';
 
 import { BorrowRecord } from '../../../borrow/models/borrow-record.model';
 
-import { AuthService } from '../../../../core/services/auth.service';
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-fine-list',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    RouterLink
+    FormsModule
   ],
   templateUrl: './fine-list.component.html',
   styleUrl: './fine-list.component.scss'
