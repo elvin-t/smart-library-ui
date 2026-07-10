@@ -1,19 +1,35 @@
+
 .sidebar {
   width: 270px;
-  min-height: 100vh;
+  height: 100vh;
   background: #111827;
   color: #ffffff;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar-brand {
-  height: 76px;
+  flex: 0 0 76px;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-footer {
+  flex: 0 0 auto;
+  padding: 16px 20px;
+  color: #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .brand-icon {
@@ -39,10 +55,7 @@
   color: #9ca3af;
 }
 
-.sidebar-nav {
-  padding: 16px;
-  flex: 1;
-}
+
 
 .nav-link {
   color: #d1d5db;
@@ -68,10 +81,4 @@
     background: #2563eb;
     color: #ffffff;
   }
-}
-
-.sidebar-footer {
-  padding: 16px 20px;
-  color: #9ca3af;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
