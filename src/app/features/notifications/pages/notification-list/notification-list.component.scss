@@ -1,11 +1,46 @@
 .page-header,
 .filter-card,
 .notification-card,
-.empty-state {
+.empty-state,
+.summary-card {
   background: #ffffff;
   border-radius: 18px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.summary-card {
+  span {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  h4 {
+    margin-top: 8px;
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+
+  &.unread {
+    border-left: 5px solid #2563eb;
+  }
+
+  &.read {
+    border-left: 5px solid #16a34a;
+  }
 }
 
 .empty-state {
@@ -14,6 +49,11 @@
   i {
     font-size: 48px;
     color: #9ca3af;
+  }
+
+  h5 {
+    margin-top: 12px;
+    font-weight: 700;
   }
 }
 
@@ -30,14 +70,20 @@
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.unread-item {
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .notification-icon {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,16 +100,28 @@
 .notification-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 14px;
+  align-items: flex-start;
 
   h6 {
-    margin-bottom: 0;
+    margin-bottom: 2px;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 }
 
+.unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #2563eb;
+  display: inline-block;
+}
+
 .message {
-  margin-top: 8px;
+  margin-top: 10px;
   margin-bottom: 10px;
   color: #374151;
 }
@@ -76,10 +134,9 @@
   font-size: 14px;
 }
 
-.type-label {
-  font-size: 13px;
-  color: #2563eb;
-  font-weight: 600;
+.notification-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .pagination-bar {

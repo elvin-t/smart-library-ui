@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
 import { BorrowApiService } from '../../services/borrow-api.service';
@@ -28,15 +28,19 @@ export class BorrowCreateComponent implements OnInit {
   private readonly borrowApiService = inject(BorrowApiService);
   private readonly bookApiService = inject(BookApiService);
   private readonly authService = inject(AuthService);
+  private readonly permissionServiceInternal = inject(PermissionService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
 
-  public readonly permissionService = inject(PermissionService);
+  public readonly permissionService = this.permissionServiceInternal;
 
   availableBooks: Book[] = [];
 
   isLoadingBooks = false;
   isSaving = false;
+
+  requestedBookId?: number;
 
   borrowForm = this.formBuilder.group({
     userId: [this.authService.getUserId(), [Validators.required, Validators.min(1)]],
@@ -44,30 +48,68 @@ export class BorrowCreateComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadAvailableBooks();
+    this.readQueryParams();
 
     if (this.permissionService.isMember()) {
       this.borrowForm.controls.userId.disable();
     }
+
+    this.loadAvailableBooks();
+  }
+
+  private readQueryParams(): void {
+    const bookId = Number(this.route.snapshot.queryParamMap.get('bookId'));
+
+    if (bookId && bookId > 0) {
+      this.requestedBookId = bookId;
+      this.borrowForm.patchValue({
+        bookId
+      });
+    }
   }
 
   loadAvailableBooks(): void {
-  this.isLoadingBooks = true;
+    this.isLoadingBooks = true;
 
-  this.bookApiService.getAvailableBooks(0, 100)
-    .subscribe({
-      next: response => {
-        this.availableBooks = (response?.content ?? [])
-          .filter(book => book.availableCopies > 0 && book.available);
+    this.bookApiService.getAvailableBooks(0, 100)
+      .subscribe({
+        next: response => {
+          this.availableBooks = (response?.content ?? [])
+            .filter(book =>
+              (book.availableCopies ?? 0) > 0 &&
+              book.available
+            );
 
-        this.isLoadingBooks = false;
-      },
-      error: () => {
-        this.availableBooks = [];
-        this.isLoadingBooks = false;
-      }
-    });
-}
+          this.handleRequestedBookAfterLoad();
+
+          this.isLoadingBooks = false;
+        },
+        error: () => {
+          this.availableBooks = [];
+          this.isLoadingBooks = false;
+        }
+      });
+  }
+
+  private handleRequestedBookAfterLoad(): void {
+    if (!this.requestedBookId) {
+      return;
+    }
+
+    const bookExists = this.availableBooks.some(
+      book => book.id === this.requestedBookId
+    );
+
+    if (!bookExists) {
+      this.borrowForm.patchValue({
+        bookId: null
+      });
+
+      this.toastr.warning(
+        'Selected book is currently not available for borrowing.'
+      );
+    }
+  }
 
   borrowBook(): void {
     if (this.borrowForm.invalid) {
@@ -103,12 +145,13 @@ export class BorrowCreateComponent implements OnInit {
 
   get selectedBook(): Book | undefined {
     const bookId = Number(this.borrowForm.getRawValue().bookId);
+
     return this.availableBooks.find(book => book.id === bookId);
   }
 
   get backRoute(): string {
     return this.permissionService.isMember()
-      ? '/app/my-borrows'
+      ? '/app/books'
       : '/app/borrow-records';
   }
 }

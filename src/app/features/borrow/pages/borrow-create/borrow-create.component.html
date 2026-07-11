@@ -48,17 +48,25 @@
         </small>
 
         <small class="text-danger" *ngIf="!isLoadingBooks && availableBooks.length === 0">
-          No available books found.
+          No available books found for borrowing.
         </small>
       </div>
 
     </div>
 
     <div class="selected-book-card mt-4" *ngIf="selectedBook">
-      <h5>{{ selectedBook.title }}</h5>
-      <p class="text-muted mb-2">by {{ selectedBook.author }}</p>
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h5>{{ selectedBook.title }}</h5>
+          <p class="text-muted mb-2">by {{ selectedBook.author }}</p>
+        </div>
 
-      <div class="row">
+        <span class="badge text-bg-success">
+          Available
+        </span>
+      </div>
+
+      <div class="row mt-2">
         <div class="col-md-4">
           <label>ISBN</label>
           <p>{{ selectedBook.isbn }}</p>
@@ -74,6 +82,11 @@
           <p>{{ selectedBook.availableCopies }}</p>
         </div>
       </div>
+    </div>
+
+    <div class="alert alert-info mt-4" *ngIf="permissionService.isMember()">
+      <i class="bi bi-info-circle me-1"></i>
+      Your user account will be selected automatically from your login session.
     </div>
 
     <div class="form-actions mt-4">

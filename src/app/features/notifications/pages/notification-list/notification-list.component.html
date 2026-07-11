@@ -7,12 +7,38 @@
         View borrow, return, due date, and overdue notifications.
       </p>
     </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="unreadCount === 0"
+      (click)="markAllAsRead()">
+      <i class="bi bi-check2-all me-1"></i>
+      Mark All Read
+    </button>
+  </div>
+
+  <div class="summary-row mt-3">
+    <div class="summary-card">
+      <span>Total</span>
+      <h4>{{ allNotifications.length }}</h4>
+    </div>
+
+    <div class="summary-card unread">
+      <span>Unread</span>
+      <h4>{{ unreadCount }}</h4>
+    </div>
+
+    <div class="summary-card read">
+      <span>Read</span>
+      <h4>{{ readCount }}</h4>
+    </div>
   </div>
 
   <div class="filter-card mt-3">
     <div class="row g-3 align-items-end">
 
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label">Notification Type</label>
 
         <select class="form-select" [(ngModel)]="selectedType">
@@ -24,7 +50,7 @@
         </select>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label">Status</label>
 
         <select class="form-select" [(ngModel)]="selectedStatus">
@@ -36,7 +62,17 @@
         </select>
       </div>
 
-      <div class="col-md-4 d-flex gap-2">
+      <div class="col-md-3">
+        <label class="form-label">Read Status</label>
+
+        <select class="form-select" [(ngModel)]="selectedReadFilter">
+          <option *ngFor="let filter of readFilters" [value]="filter.value">
+            {{ filter.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
         <button class="btn btn-primary w-100" (click)="applyFilters()">
           Apply
         </button>
@@ -59,24 +95,46 @@
     <div *ngIf="!isLoading && notifications.length === 0" class="empty-state">
       <i class="bi bi-bell-slash"></i>
       <h5>No notifications found</h5>
-      <p class="text-muted">There are no notifications for the selected filter.</p>
+      <p class="text-muted">
+        There are no notifications for the selected filter.
+      </p>
     </div>
 
     <div *ngIf="!isLoading && notifications.length > 0" class="notification-list">
 
-      <div class="notification-item" *ngFor="let notification of notifications">
+      <div
+        class="notification-item"
+        [class.unread-item]="!notification.read"
+        *ngFor="let notification of notifications">
 
         <div class="notification-icon">
           <i [class]="getTypeIcon(notification.type)"></i>
         </div>
 
         <div class="notification-content">
-          <div class="notification-title-row">
-            <h6>{{ notification.subject }}</h6>
 
-            <span class="badge" [ngClass]="getStatusClass(notification.status)">
-              {{ notification.status }}
-            </span>
+          <div class="notification-title-row">
+            <div>
+              <h6>
+                {{ notification.subject }}
+
+                <span class="unread-dot" *ngIf="!notification.read"></span>
+              </h6>
+
+              <small class="text-muted">
+                {{ getTypeLabel(notification.type) }} · {{ notification.channel }}
+              </small>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge" [ngClass]="getStatusClass(notification.status)">
+                {{ notification.status }}
+              </span>
+
+              <span class="badge" [ngClass]="getReadStatusClass(notification)">
+                {{ getReadStatusText(notification) }}
+              </span>
+            </div>
           </div>
 
           <p class="message">
@@ -103,11 +161,24 @@
               <i class="bi bi-clock me-1"></i>
               {{ notification.createdAt | date:'medium' }}
             </span>
+
+            <span *ngIf="notification.readAt">
+              <i class="bi bi-check2-circle me-1"></i>
+              Read at {{ notification.readAt | date:'medium' }}
+            </span>
           </div>
 
-          <div class="type-label mt-2">
-            {{ getTypeLabel(notification.type) }} · {{ notification.channel }}
+          <div class="notification-actions mt-3">
+            <button
+              *ngIf="!notification.read"
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              (click)="markAsRead(notification)">
+              <i class="bi bi-check2 me-1"></i>
+              Mark as Read
+            </button>
           </div>
+
         </div>
 
       </div>

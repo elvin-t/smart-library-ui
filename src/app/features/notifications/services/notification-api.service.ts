@@ -25,7 +25,6 @@ export class NotificationApiService {
     size = 10,
     sort = 'createdAt,desc'
   ): Observable<PageResponse<Notification>> {
-
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
@@ -40,7 +39,6 @@ export class NotificationApiService {
     size = 10,
     sort = 'createdAt,desc'
   ): Observable<PageResponse<Notification>> {
-
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
@@ -58,7 +56,6 @@ export class NotificationApiService {
     size = 10,
     sort = 'createdAt,desc'
   ): Observable<PageResponse<Notification>> {
-
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
@@ -76,7 +73,6 @@ export class NotificationApiService {
     size = 10,
     sort = 'createdAt,desc'
   ): Observable<PageResponse<Notification>> {
-
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
@@ -90,5 +86,19 @@ export class NotificationApiService {
 
   getNotificationById(id: number): Observable<Notification> {
     return this.http.get<Notification>(`${this.baseUrl}/${id}`);
+  }
+
+  markAsRead(id: number): Observable<Notification> {
+    return this.http.patch<Notification>(
+      `${this.baseUrl}/${id}/read`,
+      {}
+    );
+  }
+
+  markAllAsReadByUser(userId: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.baseUrl}/user/${userId}/read-all`,
+      {}
+    );
   }
 }

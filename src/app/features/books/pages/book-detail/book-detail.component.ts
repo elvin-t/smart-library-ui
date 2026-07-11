@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { BookApiService } from '../../services/book-api.service';
 import { Book } from '../../models/book.model';
@@ -25,6 +25,7 @@ export class BookDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private bookApiService: BookApiService,
     public permissionService: PermissionService
   ) {}
@@ -47,5 +48,48 @@ export class BookDetailComponent implements OnInit {
           this.isLoading = false;
         }
       });
+  }
+
+  canBorrowBook(): boolean {
+    return !!this.book &&
+      this.permissionService.hasPermission(this.permissions.BORROW_WRITE) &&
+      (this.book.availableCopies ?? 0) > 0 &&
+      this.book.available;
+  }
+
+  borrowThisBook(): void {
+    if (!this.book || !this.canBorrowBook()) {
+      return;
+    }
+
+    this.router.navigate(['/app/borrow-records/create'], {
+      queryParams: {
+        bookId: this.book.id
+      }
+    });
+  }
+
+  getAvailabilityClass(book: Book): string {
+    if ((book.availableCopies ?? 0) <= 0) {
+      return 'text-bg-danger';
+    }
+
+    if ((book.availableCopies ?? 0) <= 2) {
+      return 'text-bg-warning';
+    }
+
+    return 'text-bg-success';
+  }
+
+  getAvailabilityText(book: Book): string {
+    if ((book.availableCopies ?? 0) <= 0) {
+      return 'Out of Stock';
+    }
+
+    if ((book.availableCopies ?? 0) <= 2) {
+      return 'Low Stock';
+    }
+
+    return 'Available';
   }
 }

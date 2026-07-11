@@ -15,6 +15,9 @@
 .book-title-section {
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 label {

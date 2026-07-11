@@ -17,6 +17,9 @@ export interface Notification {
   bookId?: number | null;
   borrowRecordId?: number | null;
 
+  read?: boolean;
+  readAt?: string | null;
+
   createdAt: string;
   sentAt?: string | null;
 }
