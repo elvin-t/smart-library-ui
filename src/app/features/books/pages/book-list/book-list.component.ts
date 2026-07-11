@@ -50,6 +50,10 @@ export class BookListComponent implements OnInit {
     this.loadBooks();
   }
 
+  hasPermission(permission: string): boolean{
+    return this.permissionService.hasPermission(permission);
+  }
+
   loadBooks(): void {
     this.isLoading = true;
 
