@@ -113,35 +113,35 @@ export const routes: Routes = [
        * Inventory
        */
       {
-        path: 'inventory',
-        canActivate: [permissionGuard],
-        data: {
-          permissions: [PERMISSIONS.INVENTORY_READ]
-        },
-        loadComponent: () =>
-          import('./features/inventory/pages/inventory-list/inventory-list.component')
-            .then(m => m.InventoryListComponent)
-      },
-      {
-        path: 'inventory/low-stock',
-        canActivate: [permissionGuard],
-        data: {
-          permissions: [PERMISSIONS.INVENTORY_READ]
-        },
-        loadComponent: () =>
-          import('./features/inventory/pages/low-stock/low-stock.component')
-            .then(m => m.LowStockComponent)
-      },
-      {
-        path: 'inventory/:bookId',
-        canActivate: [permissionGuard],
-        data: {
-          permissions: [PERMISSIONS.INVENTORY_READ]
-        },
-        loadComponent: () =>
-          import('./features/inventory/pages/inventory-detail/inventory-detail.component')
-            .then(m => m.InventoryDetailComponent)
-      },
+  path: 'inventory/low-stock',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.INVENTORY_READ]
+  },
+  loadComponent: () =>
+    import('./features/inventory/pages/low-stock/low-stock.component')
+      .then(m => m.LowStockComponent)
+},
+{
+  path: 'inventory',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.INVENTORY_READ]
+  },
+  loadComponent: () =>
+    import('./features/inventory/pages/inventory-list/inventory-list.component')
+      .then(m => m.InventoryListComponent)
+},
+{
+  path: 'inventory/:bookId',
+  canActivate: [permissionGuard],
+  data: {
+    permissions: [PERMISSIONS.INVENTORY_READ]
+  },
+  loadComponent: () =>
+    import('./features/inventory/pages/inventory-detail/inventory-detail.component')
+      .then(m => m.InventoryDetailComponent)
+},
 
       /**
        * Borrow Records

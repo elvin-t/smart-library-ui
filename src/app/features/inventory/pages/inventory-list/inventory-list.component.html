@@ -4,7 +4,7 @@
     <div>
       <h3>Inventory Management</h3>
       <p class="text-muted mb-0">
-        Search and manage book inventory by book ID.
+        View all books with stock, availability, and inventory status.
       </p>
     </div>
 
@@ -16,88 +16,132 @@
     </div>
   </div>
 
-  <div class="search-card mt-3">
+  <div class="filter-card mt-3">
     <div class="row g-3 align-items-end">
+
       <div class="col-md-6">
-        <label class="form-label">Book ID</label>
+        <label class="form-label">Search Book</label>
+
         <input
-          type="number"
+          type="text"
           class="form-control"
-          [(ngModel)]="bookId"
-          placeholder="Enter book ID"
-          (keyup.enter)="searchInventory()"
+          [(ngModel)]="keyword"
+          placeholder="Search by title, author, or ISBN"
+          (keyup.enter)="searchBooks()"
         />
       </div>
 
-      <div class="col-md-3">
-        <button class="btn btn-primary w-100" (click)="searchInventory()">
+      <div class="col-md-4 d-flex gap-2">
+        <button class="btn btn-primary w-100" (click)="searchBooks()">
           <i class="bi bi-search me-1"></i>
           Search
         </button>
+
+        <button class="btn btn-outline-secondary" (click)="clearSearch()">
+          Clear
+        </button>
       </div>
+
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2">Loading inventory...</p>
-  </div>
+  <div class="table-card mt-3">
 
-  <div *ngIf="!isLoading && !inventory" class="empty-state mt-3">
-    <i class="bi bi-box-seam"></i>
-    <h5>No inventory selected</h5>
-    <p class="text-muted">Enter a book ID to view inventory details.</p>
-  </div>
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="text-muted mt-2">Loading inventory...</p>
+    </div>
 
-  <div *ngIf="!isLoading && inventory" class="inventory-card mt-3">
-    <div class="inventory-header">
-      <div>
-        <h4>{{ inventory.title }}</h4>
-        <p class="text-muted mb-0">by {{ inventory.author }}</p>
-      </div>
+    <div *ngIf="!isLoading && books.length === 0" class="empty-state">
+      <i class="bi bi-box-seam"></i>
+      <h5>No books found</h5>
+      <p class="text-muted">
+        Try searching with a different title, author, or ISBN.
+      </p>
+    </div>
 
-      <span class="badge" [ngClass]="getAvailabilityClass(inventory)">
-        {{ getAvailabilityText(inventory) }}
+    <div class="table-responsive" *ngIf="!isLoading && books.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>ISBN</th>
+            <th>Genre</th>
+            <th>Total Copies</th>
+            <th>Available</th>
+            <th>Borrowed</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let book of books">
+
+            <td>
+              <div class="fw-semibold">{{ book.title }}</div>
+              <small class="text-muted">{{ book.author }}</small>
+            </td>
+
+            <td>{{ book.isbn }}</td>
+
+            <td>
+              <span class="badge text-bg-light">
+                {{ book.genreDisplayName || book.genre }}
+              </span>
+            </td>
+
+            <td>{{ book.totalCopies }}</td>
+
+            <td>
+              <span class="fw-semibold">
+                {{ book.availableCopies }}
+              </span>
+            </td>
+
+            <td>{{ getBorrowedCopies(book) }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="getAvailabilityClass(book)">
+                {{ getAvailabilityText(book) }}
+              </span>
+            </td>
+
+            <td class="text-end">
+              <button
+                class="btn btn-sm btn-outline-primary"
+                (click)="manageInventory(book)">
+                Manage
+              </button>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
+      <span class="text-muted">
+        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
       </span>
-    </div>
 
-    <div class="row g-3 mt-2">
-      <div class="col-md-3">
-        <div class="metric-card">
-          <span>Total Copies</span>
-          <h3>{{ inventory.totalCopies }}</h3>
-        </div>
-      </div>
+      <div>
+        <button
+          class="btn btn-sm btn-outline-secondary me-2"
+          [disabled]="page === 0"
+          (click)="previousPage()">
+          Previous
+        </button>
 
-      <div class="col-md-3">
-        <div class="metric-card success">
-          <span>Available</span>
-          <h3>{{ inventory.availableCopies }}</h3>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="metric-card warning">
-          <span>Borrowed</span>
-          <h3>{{ inventory.borrowedCopies }}</h3>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="metric-card info">
-          <span>ISBN</span>
-          <h6>{{ inventory.isbn }}</h6>
-        </div>
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          [disabled]="page + 1 >= totalPages"
+          (click)="nextPage()">
+          Next
+        </button>
       </div>
     </div>
 
-    <div class="text-end mt-4">
-      <button
-        class="btn btn-primary"
-        (click)="viewDetails(inventory.bookId)">
-        Manage Inventory
-      </button>
-    </div>
   </div>
 
 </div>
