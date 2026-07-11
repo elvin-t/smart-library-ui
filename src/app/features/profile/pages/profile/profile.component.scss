@@ -1,0 +1,97 @@
+.page-header,
+.profile-card,
+.access-card,
+.empty-state {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 20px;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 32px;
+  }
+}
+
+.role-badge {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+label {
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+p {
+  margin-bottom: 0;
+}
+
+.section-title {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 14px;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.role-chip {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.permission-chip {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.empty-state {
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    color: #9ca3af;
+  }
+
+  h5 {
+    margin-top: 12px;
+    font-weight: 700;
+  }
+}

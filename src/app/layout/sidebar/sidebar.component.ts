@@ -26,6 +26,11 @@ export class SidebarComponent {
       route: '/app/dashboard'
     },
     {
+  label: 'My Profile',
+  icon: 'bi bi-person-circle',
+  route: '/app/profile'
+   },
+    {
       label: 'Users',
       icon: 'bi bi-people',
       route: '/app/users',

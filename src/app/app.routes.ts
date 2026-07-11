@@ -55,6 +55,8 @@ export const routes: Routes = [
         redirectTo: 'dashboard'
       },
 
+
+
       /**
        * Dashboard
        */
@@ -64,6 +66,12 @@ export const routes: Routes = [
           import('./features/dashboard/pages/dashboard/dashboard.component')
             .then(m => m.DashboardComponent)
       },
+        {
+  path: 'profile',
+  loadComponent: () =>
+    import('./features/profile/pages/profile/profile.component')
+      .then(m => m.ProfileComponent)
+},
 
       /**
        * Books

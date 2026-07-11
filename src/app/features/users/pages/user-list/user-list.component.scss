@@ -8,12 +8,23 @@
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .empty-state {
   text-align: center;
 
   i {
     font-size: 48px;
     color: #9ca3af;
+  }
+
+  h5 {
+    margin-top: 12px;
+    font-weight: 700;
   }
 }
 

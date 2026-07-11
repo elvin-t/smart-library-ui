@@ -41,7 +41,9 @@ export class UserListComponent implements OnInit {
 
   membershipStatuses = MEMBERSHIP_STATUSES;
 
+  keyword = '';
   selectedStatus = '';
+
   isLoading = false;
 
   page = 0;
@@ -78,6 +80,16 @@ export class UserListComponent implements OnInit {
   applyLocalFilterAndPagination(): void {
     let filteredUsers = [...this.allUsers];
 
+    const searchText = this.keyword.trim().toLowerCase();
+
+    if (searchText) {
+      filteredUsers = filteredUsers.filter(user =>
+        (user.fullName ?? '').toLowerCase().includes(searchText) ||
+        (user.email ?? '').toLowerCase().includes(searchText) ||
+        (user.phone ?? '').toLowerCase().includes(searchText)
+      );
+    }
+
     if (this.selectedStatus) {
       filteredUsers = filteredUsers.filter(user =>
         user.membershipStatus === this.selectedStatus
@@ -87,10 +99,19 @@ export class UserListComponent implements OnInit {
     this.totalElements = filteredUsers.length;
     this.totalPages = Math.ceil(this.totalElements / this.size);
 
+    if (this.page >= this.totalPages && this.totalPages > 0) {
+      this.page = this.totalPages - 1;
+    }
+
     const startIndex = this.page * this.size;
     const endIndex = startIndex + this.size;
 
     this.users = filteredUsers.slice(startIndex, endIndex);
+  }
+
+  searchUsers(): void {
+    this.page = 0;
+    this.applyLocalFilterAndPagination();
   }
 
   applyStatusFilter(): void {
@@ -99,9 +120,17 @@ export class UserListComponent implements OnInit {
   }
 
   clearFilter(): void {
+    this.keyword = '';
     this.selectedStatus = '';
     this.page = 0;
     this.applyLocalFilterAndPagination();
+  }
+
+  refreshUsers(): void {
+    this.keyword = '';
+    this.selectedStatus = '';
+    this.page = 0;
+    this.loadUsers();
   }
 
   viewUser(user: User): void {
