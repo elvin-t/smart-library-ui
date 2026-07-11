@@ -1,5 +1,6 @@
 export interface DashboardSummary {
   totalUsers: number;
+
   totalBooks: number;
   availableBooks: number;
   lowStockBooks: number;
@@ -7,4 +8,6 @@ export interface DashboardSummary {
   borrowRecords: number;
   pendingFines: number;
   notifications: number;
+
+  memberView: boolean;
 }

@@ -26,5 +26,8 @@ export const API_ENDPOINTS = {
 
   NOTIFICATIONS: {
     BASE: '/api/notifications'
-  }
+  },
+  DASHBOARD: {
+  SUMMARY: '/api/dashboard/summary'
+}
 };
