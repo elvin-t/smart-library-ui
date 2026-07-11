@@ -7,9 +7,9 @@ import { ToastrService } from 'ngx-toastr';
 import { BookApiService } from '../../services/book-api.service';
 import { Book } from '../../models/book.model';
 import { BOOK_GENRES, BookGenre } from '../../models/book-genre.model';
-import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { PermissionService } from '../../../../core/services/permission.service';
 
 @Component({
   selector: 'app-book-list',
