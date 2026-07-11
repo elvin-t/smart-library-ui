@@ -6,6 +6,7 @@ import { TokenService } from '../../../core/services/token.service';
 import { AuthResponse } from '../models/auth-response.model';
 import { LoginRequest } from '../models/login-request.model';
 import { AuthApiService } from './auth-api.service';
+import { RegisterRequest } from '../models/register-request.model';
 
 
 
@@ -14,7 +15,7 @@ import { AuthApiService } from './auth-api.service';
 })
 export class AuthService {
 
-  
+
   private readonly authApiService = inject(AuthApiService);
   private readonly router = inject(Router);
   private readonly tokenService = inject(TokenService);
@@ -28,6 +29,10 @@ export class AuthService {
       })
     );
   }
+
+  register(request: RegisterRequest): Observable<string> {
+  return this.authApiService.register(request);
+}
 
   logout(): void {
     this.tokenService.removeToken();

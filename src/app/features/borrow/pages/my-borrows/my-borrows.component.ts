@@ -7,7 +7,6 @@ import { BorrowApiService } from '../../services/borrow-api.service';
 import { BorrowRecord } from '../../models/borrow-record.model';
 import { BorrowStatus } from '../../models/borrow-status.model';
 
-
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -57,12 +56,15 @@ export class MyBorrowsComponent implements OnInit {
     this.borrowApiService.getBorrowRecordsByUser(userId, this.page, this.size)
       .subscribe({
         next: response => {
-          this.borrowRecords = response.content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
+          this.borrowRecords = response?.content ?? [];
+          this.totalPages = response?.totalPages ?? 0;
+          this.totalElements = response?.totalElements ?? this.borrowRecords.length;
           this.isLoading = false;
         },
         error: () => {
+          this.borrowRecords = [];
+          this.totalPages = 0;
+          this.totalElements = 0;
           this.isLoading = false;
         }
       });
@@ -111,10 +113,13 @@ export class MyBorrowsComponent implements OnInit {
     switch (status) {
       case BorrowStatus.BORROWED:
         return 'text-bg-primary';
+
       case BorrowStatus.RETURNED:
         return 'text-bg-success';
+
       case BorrowStatus.OVERDUE:
         return 'text-bg-danger';
+
       default:
         return 'text-bg-secondary';
     }

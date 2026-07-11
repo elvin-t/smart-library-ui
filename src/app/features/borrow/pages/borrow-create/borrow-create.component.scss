@@ -17,3 +17,25 @@
   justify-content: flex-end;
   gap: 12px;
 }
+
+.selected-book-card {
+  background: #eff6ff;
+  border-radius: 16px;
+  padding: 18px;
+  color: #1e3a8a;
+
+  h5 {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  label {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}

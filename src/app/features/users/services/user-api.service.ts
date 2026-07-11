@@ -20,18 +20,11 @@ export class UserApiService {
 
   constructor(private http: HttpClient) {}
 
-  getUsers(
-    page = 0,
-    size = 10,
-    sort = 'createdAt,desc'
-  ): Observable<PageResponse<User>> {
-    const params = new HttpParams()
-      .set('page', page)
-      .set('size', size)
-      .set('sort', sort);
 
-    return this.http.get<PageResponse<User>>(this.baseUrl, { params });
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(this.baseUrl);
   }
+
 
   getUserById(id: number): Observable<User> {
     return this.http.get<User>(`${this.baseUrl}/${id}`);

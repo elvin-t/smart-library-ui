@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { LoginRequest } from '../models/login-request.model';
 import { AuthResponse } from '../models/auth-response.model';
+import { RegisterRequest } from '../models/register-request.model';
 
 @Injectable({
   providedIn: 'root'
@@ -22,4 +23,16 @@ export class AuthApiService {
       request
     );
   }
+
+
+  register(request: RegisterRequest): Observable<string> {
+    return this.http.post(
+      `${this.baseUrl}${API_ENDPOINTS.AUTH.REGISTER}`,
+      request,
+      {
+        responseType: 'text'
+      }
+    );
+  }
+
 }

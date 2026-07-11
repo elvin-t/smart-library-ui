@@ -23,6 +23,13 @@ export const routes: Routes = [
     component: LoginComponent
   },
 
+  {
+  path: 'register',
+  loadComponent: () =>
+    import('./features/auth/pages/register/register.component')
+      .then(m => m.RegisterComponent)
+},
+
   /**
    * Access Denied Route
    * Keep this outside /app because permission guard redirects to /access-denied

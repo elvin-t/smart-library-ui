@@ -37,6 +37,8 @@ export class UserListComponent implements OnInit {
   public readonly permissions = PERMISSIONS;
 
   users: User[] = [];
+  allUsers: User[] = [];
+
   membershipStatuses = MEMBERSHIP_STATUSES;
 
   selectedStatus = '';
@@ -54,25 +56,18 @@ export class UserListComponent implements OnInit {
   loadUsers(): void {
     this.isLoading = true;
     this.users = [];
+    this.allUsers = [];
 
-    this.userApiService.getUsers(this.page, this.size)
+    this.userApiService.getUsers()
       .subscribe({
         next: response => {
-          let content: User[] = response?.content ?? [];
-
-          if (this.selectedStatus) {
-            content = content.filter(
-              user => user.membershipStatus === this.selectedStatus
-            );
-          }
-
-          this.users = content;
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? content.length;
+          this.allUsers = response ?? [];
+          this.applyLocalFilterAndPagination();
           this.isLoading = false;
         },
         error: () => {
           this.users = [];
+          this.allUsers = [];
           this.totalPages = 0;
           this.totalElements = 0;
           this.isLoading = false;
@@ -80,15 +75,33 @@ export class UserListComponent implements OnInit {
       });
   }
 
+  applyLocalFilterAndPagination(): void {
+    let filteredUsers = [...this.allUsers];
+
+    if (this.selectedStatus) {
+      filteredUsers = filteredUsers.filter(user =>
+        user.membershipStatus === this.selectedStatus
+      );
+    }
+
+    this.totalElements = filteredUsers.length;
+    this.totalPages = Math.ceil(this.totalElements / this.size);
+
+    const startIndex = this.page * this.size;
+    const endIndex = startIndex + this.size;
+
+    this.users = filteredUsers.slice(startIndex, endIndex);
+  }
+
   applyStatusFilter(): void {
     this.page = 0;
-    this.loadUsers();
+    this.applyLocalFilterAndPagination();
   }
 
   clearFilter(): void {
     this.selectedStatus = '';
     this.page = 0;
-    this.loadUsers();
+    this.applyLocalFilterAndPagination();
   }
 
   viewUser(user: User): void {
@@ -110,7 +123,6 @@ export class UserListComponent implements OnInit {
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User activated successfully');
-
           user.active = response.active;
           this.loadUsers();
         }
@@ -128,7 +140,6 @@ export class UserListComponent implements OnInit {
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User deactivated successfully');
-
           user.active = response.active;
           this.loadUsers();
         }
@@ -138,14 +149,14 @@ export class UserListComponent implements OnInit {
   nextPage(): void {
     if (this.page + 1 < this.totalPages) {
       this.page++;
-      this.loadUsers();
+      this.applyLocalFilterAndPagination();
     }
   }
 
   previousPage(): void {
     if (this.page > 0) {
       this.page--;
-      this.loadUsers();
+      this.applyLocalFilterAndPagination();
     }
   }
 

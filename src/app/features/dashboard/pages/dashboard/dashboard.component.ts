@@ -30,57 +30,97 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
 
   dashboardCards: DashboardCard[] = [
-    {
-      title: 'Users',
-      value: 0,
-      description: 'Registered library users',
-      icon: 'bi bi-people',
-      colorClass: 'card-info',
-      permissions: [PERMISSIONS.USER_READ],
-      roles: [ROLES.ADMIN]
-    },
-    {
-      title: 'Books',
-      value: 0,
-      description: 'Books available in catalog',
-      icon: 'bi bi-journal-bookmark',
-      colorClass: 'card-primary',
-      permissions: [PERMISSIONS.BOOK_READ]
-    },
-    {
-      title: 'Low Stock',
-      value: 0,
-      description: 'Books with low available copies',
-      icon: 'bi bi-box-seam',
-      colorClass: 'card-success',
-      permissions: [PERMISSIONS.INVENTORY_READ],
-      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-    },
-    {
-      title: 'Borrow Records',
-      value: 0,
-      description: 'Borrow and return activity',
-      icon: 'bi bi-arrow-left-right',
-      colorClass: 'card-warning',
-      permissions: [PERMISSIONS.BORROW_READ]
-    },
-    {
-      title: 'Pending Fines',
-      value: 0,
-      description: 'Unpaid overdue fine records',
-      icon: 'bi bi-cash-coin',
-      colorClass: 'card-danger',
-      permissions: [PERMISSIONS.BORROW_READ]
-    },
-    {
-      title: 'Notifications',
-      value: 0,
-      description: 'Borrow and return alerts',
-      icon: 'bi bi-bell',
-      colorClass: 'card-secondary',
-      permissions: [PERMISSIONS.BORROW_READ]
-    }
-  ];
+  {
+    title: 'Users',
+    value: 0,
+    description: 'Registered library users',
+    icon: 'bi bi-people',
+    colorClass: 'card-info',
+    permissions: [PERMISSIONS.USER_READ],
+    roles: [ROLES.ADMIN]
+  },
+  {
+    title: 'Books',
+    value: 0,
+    description: 'Books available in catalog',
+    icon: 'bi bi-journal-bookmark',
+    colorClass: 'card-primary',
+    permissions: [PERMISSIONS.BOOK_READ],
+    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+  },
+  {
+    title: 'Available Books',
+    value: 0,
+    description: 'Books available to borrow',
+    icon: 'bi bi-journal-bookmark',
+    colorClass: 'card-primary',
+    permissions: [PERMISSIONS.BOOK_READ],
+    roles: [ROLES.MEMBER]
+  },
+  {
+    title: 'Low Stock',
+    value: 0,
+    description: 'Books with low available copies',
+    icon: 'bi bi-box-seam',
+    colorClass: 'card-success',
+    permissions: [PERMISSIONS.INVENTORY_READ],
+    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+  },
+  {
+    title: 'Borrow Records',
+    value: 0,
+    description: 'Borrow and return activity',
+    icon: 'bi bi-arrow-left-right',
+    colorClass: 'card-warning',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+  },
+  {
+    title: 'My Borrows',
+    value: 0,
+    description: 'Your borrow and return history',
+    icon: 'bi bi-person-lines-fill',
+    colorClass: 'card-warning',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.MEMBER]
+  },
+  {
+    title: 'Pending Fines',
+    value: 0,
+    description: 'Unpaid overdue fine records',
+    icon: 'bi bi-cash-coin',
+    colorClass: 'card-danger',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+  },
+  {
+    title: 'My Pending Fines',
+    value: 0,
+    description: 'Your unpaid overdue fines',
+    icon: 'bi bi-cash-coin',
+    colorClass: 'card-danger',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.MEMBER]
+  },
+  {
+    title: 'Notifications',
+    value: 0,
+    description: 'Borrow and return alerts',
+    icon: 'bi bi-bell',
+    colorClass: 'card-secondary',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+  },
+  {
+    title: 'My Notifications',
+    value: 0,
+    description: 'Your library alerts and reminders',
+    icon: 'bi bi-bell',
+    colorClass: 'card-secondary',
+    permissions: [PERMISSIONS.BORROW_READ],
+    roles: [ROLES.MEMBER]
+  }
+];
 
   quickActions: QuickAction[] = [
     {
@@ -157,32 +197,40 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  private updateCardValues(summary: DashboardSummary): void {
-    this.dashboardCards = this.dashboardCards.map(card => {
-      switch (card.title) {
-        case 'Users':
-          return { ...card, value: summary.totalUsers };
+ private updateCardValues(summary: DashboardSummary): void {
+  this.dashboardCards = this.dashboardCards.map(card => {
+    switch (card.title) {
+      case 'Users':
+        return { ...card, value: summary.totalUsers };
 
-        case 'Books':
-          return { ...card, value: summary.totalBooks };
+      case 'Books':
+        return { ...card, value: summary.totalBooks };
 
-        case 'Low Stock':
-          return { ...card, value: summary.lowStockBooks };
+      case 'Available Books':
+        return { ...card, value: summary.availableBooks };
 
-        case 'Borrow Records':
-          return { ...card, value: summary.borrowRecords };
+      case 'Low Stock':
+        return { ...card, value: summary.lowStockBooks };
 
-        case 'Pending Fines':
-          return { ...card, value: summary.pendingFines };
+      case 'Borrow Records':
+      case 'My Borrows':
+        return { ...card, value: summary.borrowRecords };
 
-        case 'Notifications':
-          return { ...card, value: summary.notifications };
+      case 'Pending Fines':
+      case 'My Pending Fines':
+        return { ...card, value: summary.pendingFines };
 
-        default:
-          return card;
-      }
-    });
-  }
+      case 'Notifications':
+      case 'My Notifications':
+        return { ...card, value: summary.notifications };
+
+      default:
+        return card;
+    }
+  });
+}
+
+
 
   get userEmail(): string {
     return this.authService.getEmail() ?? 'User';

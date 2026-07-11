@@ -4,11 +4,11 @@
     <div>
       <h3>Borrow Book</h3>
       <p class="text-muted mb-0">
-        Create a borrow record using User ID and Book ID.
+        Select an available book and create a borrow record.
       </p>
     </div>
 
-    <a routerLink="/app/borrow-records" class="btn btn-outline-secondary">
+    <a [routerLink]="backRoute" class="btn btn-outline-secondary">
       Back
     </a>
   </div>
@@ -16,32 +16,79 @@
   <form class="form-card mt-3" [formGroup]="borrowForm" (ngSubmit)="borrowBook()">
 
     <div class="row g-3">
-      <div class="col-md-6">
+
+      <div class="col-md-6" *ngIf="!permissionService.isMember()">
         <label class="form-label">User ID</label>
-        <input type="number" class="form-control" formControlName="userId" />
+
+        <input
+          type="number"
+          class="form-control"
+          formControlName="userId"
+          placeholder="Enter member user ID"
+        />
 
         <small class="text-muted">
-          Default value is taken from logged-in user token.
+          For Admin/Librarian use only.
         </small>
       </div>
 
       <div class="col-md-6">
-        <label class="form-label">Book ID</label>
-        <input
-          type="number"
-          class="form-control"
-          formControlName="bookId"
-          placeholder="Enter book ID"
-        />
+        <label class="form-label">Book</label>
+
+        <select class="form-select" formControlName="bookId">
+          <option [ngValue]="null">Select available book</option>
+
+          <option *ngFor="let book of availableBooks" [ngValue]="book.id">
+            {{ book.title }} - {{ book.author }} - {{ book.availableCopies }} available
+          </option>
+        </select>
+
+        <small class="text-muted" *ngIf="isLoadingBooks">
+          Loading available books...
+        </small>
+
+        <small class="text-danger" *ngIf="!isLoadingBooks && availableBooks.length === 0">
+          No available books found.
+        </small>
+      </div>
+
+    </div>
+
+    <div class="selected-book-card mt-4" *ngIf="selectedBook">
+      <h5>{{ selectedBook.title }}</h5>
+      <p class="text-muted mb-2">by {{ selectedBook.author }}</p>
+
+      <div class="row">
+        <div class="col-md-4">
+          <label>ISBN</label>
+          <p>{{ selectedBook.isbn }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Genre</label>
+          <p>{{ selectedBook.genreDisplayName || selectedBook.genre }}</p>
+        </div>
+
+        <div class="col-md-4">
+          <label>Available Copies</label>
+          <p>{{ selectedBook.availableCopies }}</p>
+        </div>
       </div>
     </div>
 
     <div class="form-actions mt-4">
-      <button type="button" routerLink="/app/borrow-records" class="btn btn-outline-secondary">
+      <button
+        type="button"
+        [routerLink]="backRoute"
+        class="btn btn-outline-secondary">
         Cancel
       </button>
 
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="isSaving || availableBooks.length === 0">
+
         <span *ngIf="!isSaving">Borrow Book</span>
 
         <span *ngIf="isSaving">
