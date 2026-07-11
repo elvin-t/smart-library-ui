@@ -12,6 +12,7 @@ import { BorrowRecord } from '../../../borrow/models/borrow-record.model';
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
 import { AuthService } from '../../../auth/services/auth.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-fine-list',
@@ -30,6 +31,7 @@ export class FineListComponent implements OnInit {
   private readonly permissionServiceInternal = inject(PermissionService);
   private readonly toastr = inject(ToastrService);
   private readonly router = inject(Router);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = this.permissionServiceInternal;
   public readonly permissions = PERMISSIONS;
@@ -116,21 +118,27 @@ export class FineListComponent implements OnInit {
     this.router.navigate(['/app/fines', record.id]);
   }
 
-  markFineAsPaid(record: BorrowRecord): void {
-    const confirmed = confirm(`Mark fine as paid for borrow record #${record.id}?`);
+ async markFineAsPaid(record: BorrowRecord): Promise<void> {
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Mark Fine as Paid',
+    message: `Mark fine as paid for borrow record #${record.id}?`,
+    confirmText: 'Mark Paid',
+    cancelText: 'Cancel',
+    variant: 'success'
+  });
 
-    if (!confirmed) {
-      return;
-    }
-
-    this.fineApiService.markFineAsPaid(record.id)
-      .subscribe({
-        next: () => {
-          this.toastr.success('Fine marked as paid');
-          this.loadFines();
-        }
-      });
+  if (!confirmed) {
+    return;
   }
+
+  this.fineApiService.markFineAsPaid(record.id)
+    .subscribe({
+      next: () => {
+        this.toastr.success('Fine marked as paid');
+        this.loadFines();
+      }
+    });
+}
 
   canPayFine(record: BorrowRecord): boolean {
     return (record.fineAmount ?? 0) > 0 &&

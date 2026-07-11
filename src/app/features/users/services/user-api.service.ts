@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
-import { PageResponse } from '../../../core/models/page-response.model';
 
 import { User } from '../models/user.model';
 import { UpdateUserRequest } from '../models/update-user-request.model';
@@ -20,11 +19,9 @@ export class UserApiService {
 
   constructor(private http: HttpClient) {}
 
-
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(this.baseUrl);
   }
-
 
   getUserById(id: number): Observable<User> {
     return this.http.get<User>(`${this.baseUrl}/${id}`);

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -9,6 +9,7 @@ import { Book } from '../../models/book.model';
 import { BOOK_GENRES, BookGenre } from '../../models/book-genre.model';
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-book-list',
@@ -37,10 +38,13 @@ export class BookListComponent implements OnInit {
   totalElements = 0;
 
   constructor(
+    private confirmDialogService: ConfirmDialogService,
     private bookApiService: BookApiService,
-    public permissionService: PermissionService,
-    private toastr: ToastrService
-  ) {}
+    private permissionService: PermissionService,
+    private toastr: ToastrService,
+  ){
+
+  }
 
   ngOnInit(): void {
     this.loadBooks();
@@ -118,21 +122,27 @@ export class BookListComponent implements OnInit {
     this.loadBooks();
   }
 
-  deleteBook(book: Book): void {
-    const confirmed = confirm(`Are you sure you want to delete "${book.title}"?`);
+  async deleteBook(book: Book): Promise<void> {
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Delete Book',
+    message: `Are you sure you want to delete "${book.title}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  });
 
-    if (!confirmed) {
-      return;
-    }
-
-    this.bookApiService.deleteBook(book.id)
-      .subscribe({
-        next: () => {
-          this.toastr.success('Book deleted successfully');
-          this.loadBooks();
-        }
-      });
+  if (!confirmed) {
+    return;
   }
+
+  this.bookApiService.deleteBook(book.id)
+    .subscribe({
+      next: () => {
+        this.toastr.success('Book deleted successfully');
+        this.loadBooks();
+      }
+    });
+}
 
   nextPage(): void {
     if (this.page + 1 < this.totalPages) {

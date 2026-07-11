@@ -10,6 +10,7 @@ import { BORROW_STATUSES, BorrowStatus } from '../../models/borrow-status.model'
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-borrow-list',
@@ -27,6 +28,7 @@ export class BorrowListComponent implements OnInit {
   private readonly borrowApiService = inject(BorrowApiService);
   private readonly toastr = inject(ToastrService);
   private readonly router = inject(Router);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -100,21 +102,27 @@ export class BorrowListComponent implements OnInit {
     this.router.navigate(['/app/borrow-records', record.id]);
   }
 
-  returnBook(record: BorrowRecord): void {
-    const confirmed = confirm(`Are you sure you want to return borrow record #${record.id}?`);
+  async returnBook(record: BorrowRecord): Promise<void> {
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Return Book',
+    message: `Are you sure you want to return borrow record #${record.id}?`,
+    confirmText: 'Return',
+    cancelText: 'Cancel',
+    variant: 'success'
+  });
 
-    if (!confirmed) {
-      return;
-    }
-
-    this.borrowApiService.returnBook(record.id)
-      .subscribe({
-        next: () => {
-          this.toastr.success('Book returned successfully');
-          this.loadBorrowRecords();
-        }
-      });
+  if (!confirmed) {
+    return;
   }
+
+  this.borrowApiService.returnBook(record.id)
+    .subscribe({
+      next: () => {
+        this.toastr.success('Book returned successfully');
+        this.loadBorrowRecords();
+      }
+    });
+}
 
   nextPage(): void {
     if (this.page + 1 < this.totalPages) {

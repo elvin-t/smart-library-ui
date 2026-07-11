@@ -10,6 +10,7 @@ import { FineResponse } from '../../models/fine-response.model';
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-borrow-detail',
@@ -26,6 +27,7 @@ export class BorrowDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly borrowApiService = inject(BorrowApiService);
   private readonly toastr = inject(ToastrService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -70,64 +72,76 @@ export class BorrowDetailComponent implements OnInit {
       });
   }
 
-  returnBook(): void {
-    if (!this.record) {
-      return;
-    }
-
-    const confirmed = confirm(`Are you sure you want to return borrow record #${this.record.id}?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.isSaving = true;
-
-    this.borrowApiService.returnBook(this.record.id)
-      .subscribe({
-        next: response => {
-          this.record = response;
-          this.toastr.success('Book returned successfully');
-          this.loadFineDetails();
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+ async returnBook(): Promise<void> {
+  if (!this.record) {
+    return;
   }
 
-  markFineAsPaid(): void {
-    if (!this.record) {
-      return;
-    }
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Return Book',
+    message: `Are you sure you want to return borrow record #${this.record.id}?`,
+    confirmText: 'Return',
+    cancelText: 'Cancel',
+    variant: 'success'
+  });
 
-    const confirmed = confirm(`Mark fine as paid for borrow record #${this.record.id}?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.isSaving = true;
-
-    this.borrowApiService.markFineAsPaid(this.record.id)
-      .subscribe({
-        next: response => {
-          this.fine = response;
-
-          if (this.record) {
-            this.record.finePaid = response.finePaid;
-            this.record.finePaidAt = response.finePaidAt;
-          }
-
-          this.toastr.success('Fine marked as paid');
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+  if (!confirmed) {
+    return;
   }
+
+  this.isSaving = true;
+
+  this.borrowApiService.returnBook(this.record.id)
+    .subscribe({
+      next: response => {
+        this.record = response;
+        this.toastr.success('Book returned successfully');
+        this.loadFineDetails();
+        this.isSaving = false;
+      },
+      error: () => {
+        this.isSaving = false;
+      }
+    });
+}
+
+ async markFineAsPaid(): Promise<void> {
+  if (!this.record) {
+    return;
+  }
+
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Mark Fine as Paid',
+    message: `Mark fine as paid for borrow record #${this.record.id}?`,
+    confirmText: 'Mark Paid',
+    cancelText: 'Cancel',
+    variant: 'success'
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
+  this.isSaving = true;
+
+  this.borrowApiService.markFineAsPaid(this.record.id)
+    .subscribe({
+      next: response => {
+        this.fine = response;
+
+        if (this.record) {
+          this.record.finePaid = response.finePaid;
+          this.record.finePaidAt = response.finePaidAt;
+        }
+
+        this.toastr.success('Fine marked as paid');
+        this.isSaving = false;
+      },
+      error: () => {
+        this.isSaving = false;
+      }
+    });
+}
 
   canReturn(): boolean {
     return this.record?.status === BorrowStatus.BORROWED &&

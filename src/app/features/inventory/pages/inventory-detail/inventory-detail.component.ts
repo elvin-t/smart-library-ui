@@ -8,6 +8,7 @@ import { InventoryApiService } from '../../services/inventory-api.service';
 import { Inventory } from '../../models/inventory.model';
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-inventory-detail',
@@ -26,6 +27,7 @@ export class InventoryDetailComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly inventoryApiService = inject(InventoryApiService);
   private readonly toastr = inject(ToastrService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -94,35 +96,41 @@ export class InventoryDetailComponent implements OnInit {
       });
   }
 
-  removeCopies(): void {
-    if (this.removeCopiesForm.invalid) {
-      this.removeCopiesForm.markAllAsTouched();
-      return;
-    }
-
-    const copies = Number(this.removeCopiesForm.value.copies);
-
-    const confirmed = confirm(`Are you sure you want to remove ${copies} copies?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.isSaving = true;
-
-    this.inventoryApiService.removeCopies(this.bookId, { copies })
-      .subscribe({
-        next: response => {
-          this.inventory = response;
-          this.removeCopiesForm.patchValue({ copies: 1 });
-          this.toastr.success('Copies removed successfully');
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+  async removeCopies(): Promise<void> {
+  if (this.removeCopiesForm.invalid) {
+    this.removeCopiesForm.markAllAsTouched();
+    return;
   }
+
+  const copies = Number(this.removeCopiesForm.value.copies);
+
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Remove Copies',
+    message: `Are you sure you want to remove ${copies} copies?`,
+    confirmText: 'Remove',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
+  this.isSaving = true;
+
+  this.inventoryApiService.removeCopies(this.bookId, { copies })
+    .subscribe({
+      next: response => {
+        this.inventory = response;
+        this.removeCopiesForm.patchValue({ copies: 1 });
+        this.toastr.success('Copies removed successfully');
+        this.isSaving = false;
+      },
+      error: () => {
+        this.isSaving = false;
+      }
+    });
+}
 
   adjustAvailableCopies(): void {
     if (this.adjustAvailableForm.invalid) {

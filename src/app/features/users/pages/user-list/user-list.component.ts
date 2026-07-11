@@ -3,10 +3,15 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { UserApiService } from '../../services/user-api.service';
 import { AdminUserApiService } from '../../services/admin-user-api.service';
+
 import { User } from '../../models/user.model';
+import { AdminAuthUserStatus } from '../../models/admin-auth-user-status.model';
+
 import {
   MEMBERSHIP_STATUSES,
   MembershipStatus
@@ -14,6 +19,7 @@ import {
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-user-list',
@@ -32,6 +38,7 @@ export class UserListComponent implements OnInit {
   private readonly adminUserApiService = inject(AdminUserApiService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -60,21 +67,59 @@ export class UserListComponent implements OnInit {
     this.users = [];
     this.allUsers = [];
 
-    this.userApiService.getUsers()
-      .subscribe({
-        next: response => {
-          this.allUsers = response ?? [];
-          this.applyLocalFilterAndPagination();
-          this.isLoading = false;
-        },
-        error: () => {
-          this.users = [];
-          this.allUsers = [];
-          this.totalPages = 0;
-          this.totalElements = 0;
-          this.isLoading = false;
-        }
-      });
+    const users$ = this.userApiService.getUsers();
+
+    /**
+     * This API returns login active/inactive from Auth Service.
+     * If it fails, UI will fallback active=true to avoid breaking page.
+     */
+    const authStatuses$ = this.permissionService.hasPermission(this.permissions.USER_READ)
+      ? this.adminUserApiService.getAllAuthUserStatuses().pipe(
+          catchError(() => of([] as AdminAuthUserStatus[]))
+        )
+      : of([] as AdminAuthUserStatus[]);
+
+    forkJoin({
+      users: users$,
+      authStatuses: authStatuses$
+    }).subscribe({
+      next: ({ users, authStatuses }) => {
+        this.allUsers = this.mergeUsersWithAuthStatus(
+          users ?? [],
+          authStatuses ?? []
+        );
+
+        this.applyLocalFilterAndPagination();
+        this.isLoading = false;
+      },
+      error: () => {
+        this.users = [];
+        this.allUsers = [];
+        this.totalPages = 0;
+        this.totalElements = 0;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private mergeUsersWithAuthStatus(
+    users: User[],
+    authStatuses: AdminAuthUserStatus[]
+  ): User[] {
+    const statusMap = new Map<number, AdminAuthUserStatus>();
+
+    authStatuses.forEach(status => {
+      statusMap.set(status.id, status);
+    });
+
+    return users.map(user => {
+      const authStatus = statusMap.get(user.id);
+
+      return {
+        ...user,
+        active: authStatus?.active ?? user.active ?? true
+      };
+    });
   }
 
   applyLocalFilterAndPagination(): void {
@@ -141,8 +186,14 @@ export class UserListComponent implements OnInit {
     this.router.navigate(['/app/users', user.id, 'edit']);
   }
 
-  activateUser(user: User): void {
-    const confirmed = confirm(`Activate login access for ${user.email}?`);
+  async activateUser(user: User): Promise<void> {
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Activate User Login',
+      message: `Are you sure you want to activate login access for ${user.email}?`,
+      confirmText: 'Activate',
+      cancelText: 'Cancel',
+      variant: 'success'
+    });
 
     if (!confirmed) {
       return;
@@ -158,8 +209,14 @@ export class UserListComponent implements OnInit {
       });
   }
 
-  deactivateUser(user: User): void {
-    const confirmed = confirm(`Deactivate login access for ${user.email}?`);
+  async deactivateUser(user: User): Promise<void> {
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Deactivate User Login',
+      message: `Are you sure you want to deactivate login access for ${user.email}? This user will not be able to login.`,
+      confirmText: 'Deactivate',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
 
     if (!confirmed) {
       return;

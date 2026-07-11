@@ -8,6 +8,7 @@ import { Fine } from '../../models/fine.model';
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-fine-detail',
@@ -24,6 +25,7 @@ export class FineDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly fineApiService = inject(FineApiService);
   private readonly toastr = inject(ToastrService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
@@ -54,31 +56,37 @@ export class FineDetailComponent implements OnInit {
       });
   }
 
-  markFineAsPaid(): void {
-    if (!this.fine) {
-      return;
-    }
-
-    const confirmed = confirm(`Mark fine as paid for borrow record #${this.fine.borrowRecordId}?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.isSaving = true;
-
-    this.fineApiService.markFineAsPaid(this.fine.borrowRecordId)
-      .subscribe({
-        next: response => {
-          this.fine = response;
-          this.toastr.success('Fine marked as paid');
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+  async markFineAsPaid(): Promise<void> {
+  if (!this.fine) {
+    return;
   }
+
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Mark Fine as Paid',
+    message: `Mark fine as paid for borrow record #${this.fine.borrowRecordId}?`,
+    confirmText: 'Mark Paid',
+    cancelText: 'Cancel',
+    variant: 'success'
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
+  this.isSaving = true;
+
+  this.fineApiService.markFineAsPaid(this.fine.borrowRecordId)
+    .subscribe({
+      next: response => {
+        this.fine = response;
+        this.toastr.success('Fine marked as paid');
+        this.isSaving = false;
+      },
+      error: () => {
+        this.isSaving = false;
+      }
+    });
+}
 
   canPayFine(): boolean {
     return !!this.fine &&

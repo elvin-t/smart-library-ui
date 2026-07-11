@@ -23,6 +23,7 @@ import {
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-notification-list',
@@ -39,6 +40,7 @@ export class NotificationListComponent implements OnInit {
   private readonly notificationApiService = inject(NotificationApiService);
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   public readonly permissionService = inject(PermissionService);
 
@@ -179,28 +181,34 @@ export class NotificationListComponent implements OnInit {
       });
   }
 
-  markAllAsRead(): void {
-    const userId = this.authService.getUserId();
+ async markAllAsRead(): Promise<void> {
+  const userId = this.authService.getUserId();
 
-    if (!userId) {
-      this.toastr.error('User ID not found in token');
-      return;
-    }
-
-    const confirmed = confirm('Mark all notifications as read?');
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.notificationApiService.markAllAsReadByUser(userId)
-      .subscribe({
-        next: () => {
-          this.toastr.success('All notifications marked as read');
-          this.loadNotifications();
-        }
-      });
+  if (!userId) {
+    this.toastr.error('User ID not found in token');
+    return;
   }
+
+  const confirmed = await this.confirmDialogService.confirm({
+    title: 'Mark All Notifications as Read',
+    message: 'Are you sure you want to mark all notifications as read?',
+    confirmText: 'Mark All Read',
+    cancelText: 'Cancel',
+    variant: 'primary'
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
+  this.notificationApiService.markAllAsReadByUser(userId)
+    .subscribe({
+      next: () => {
+        this.toastr.success('All notifications marked as read');
+        this.loadNotifications();
+      }
+    });
+}
 
   previousPage(): void {
     if (this.page > 0) {
