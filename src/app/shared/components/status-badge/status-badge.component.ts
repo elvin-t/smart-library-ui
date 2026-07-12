@@ -1,17 +1,27 @@
-import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input
+} from '@angular/core';
 
 @Component({
   selector: 'app-status-badge',
   standalone: true,
+  imports: [
+    CommonModule
+  ],
   templateUrl: './status-badge.component.html',
-  styleUrl: './status-badge.component.scss'
+  styleUrl: './status-badge.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StatusBadgeComponent {
 
-  @Input() status = '';
+  readonly status = input('');
 
-  get badgeClass(): string {
-    const value = this.status?.toUpperCase();
+  readonly badgeClass = computed(() => {
+    const value = this.status()?.toUpperCase();
 
     switch (value) {
       case 'ACTIVE':
@@ -38,5 +48,5 @@ export class StatusBadgeComponent {
       default:
         return 'text-bg-secondary';
     }
-  }
+  });
 }

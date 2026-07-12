@@ -1,8 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { forkJoin, of } from 'rxjs';
+import { finalize, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { UserApiService } from '../../services/user-api.service';
@@ -24,7 +31,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './user-detail.component.html',
-  styleUrl: './user-detail.component.scss'
+  styleUrl: './user-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserDetailComponent implements OnInit {
 
@@ -37,22 +45,47 @@ export class UserDetailComponent implements OnInit {
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
 
-  userId!: number;
-  user?: User;
-  isLoading = false;
+  readonly userId = signal<number | null>(null);
+  readonly user = signal<User | null>(null);
+  readonly isLoading = signal(false);
+
+  readonly showActivateButton = computed(() => {
+    const user = this.user();
+
+    return !!user &&
+      this.canManageLogin() &&
+      user.active === false;
+  });
+
+  readonly showDeactivateButton = computed(() => {
+    const user = this.user();
+
+    return !!user &&
+      this.canManageLogin() &&
+      user.active !== false;
+  });
 
   ngOnInit(): void {
-    this.userId = Number(this.route.snapshot.paramMap.get('id'));
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+
+    this.userId.set(id);
     this.loadUser();
   }
 
   loadUser(): void {
-    this.isLoading = true;
+    const id = this.userId();
 
-    const user$ = this.userApiService.getUserById(this.userId);
+    if (!id) {
+      this.user.set(null);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    const user$ = this.userApiService.getUserById(id);
 
     const authStatus$ = this.permissionService.hasPermission(this.permissions.USER_READ)
-      ? this.adminUserApiService.getAuthUserStatus(this.userId).pipe(
+      ? this.adminUserApiService.getAuthUserStatus(id).pipe(
           catchError(() => of(undefined as AdminAuthUserStatus | undefined))
         )
       : of(undefined as AdminAuthUserStatus | undefined);
@@ -60,19 +93,19 @@ export class UserDetailComponent implements OnInit {
     forkJoin({
       user: user$,
       authStatus: authStatus$
-    }).subscribe({
-      next: ({ user, authStatus }) => {
-        this.user = {
-          ...user,
-          active: authStatus?.active ?? user.active ?? true
-        };
-
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-      }
-    });
+    })
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: ({ user, authStatus }) => {
+          this.user.set({
+            ...user,
+            active: authStatus?.active ?? user.active ?? true
+          });
+        },
+        error: () => {
+          this.user.set(null);
+        }
+      });
   }
 
   canEdit(): boolean {
@@ -84,13 +117,15 @@ export class UserDetailComponent implements OnInit {
   }
 
   async activateUser(): Promise<void> {
-    if (!this.user) {
+    const user = this.user();
+
+    if (!user) {
       return;
     }
 
     const confirmed = await this.confirmDialogService.confirm({
       title: 'Activate User Login',
-      message: `Are you sure you want to activate login access for ${this.user.email}?`,
+      message: `Are you sure you want to activate login access for ${user.email}?`,
       confirmText: 'Activate',
       cancelText: 'Cancel',
       variant: 'success'
@@ -100,14 +135,16 @@ export class UserDetailComponent implements OnInit {
       return;
     }
 
-    this.adminUserApiService.activateUser(this.user.id)
+    this.adminUserApiService.activateUser(user.id)
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User activated successfully');
 
-          if (this.user) {
-            this.user.active = response.active;
-          }
+          this.user.update(currentUser =>
+            currentUser
+              ? { ...currentUser, active: response.active }
+              : currentUser
+          );
 
           this.loadUser();
         }
@@ -115,13 +152,15 @@ export class UserDetailComponent implements OnInit {
   }
 
   async deactivateUser(): Promise<void> {
-    if (!this.user) {
+    const user = this.user();
+
+    if (!user) {
       return;
     }
 
     const confirmed = await this.confirmDialogService.confirm({
       title: 'Deactivate User Login',
-      message: `Are you sure you want to deactivate login access for ${this.user.email}? This user will not be able to login.`,
+      message: `Are you sure you want to deactivate login access for ${user.email}? This user will not be able to login.`,
       confirmText: 'Deactivate',
       cancelText: 'Cancel',
       variant: 'danger'
@@ -131,30 +170,20 @@ export class UserDetailComponent implements OnInit {
       return;
     }
 
-    this.adminUserApiService.deactivateUser(this.user.id)
+    this.adminUserApiService.deactivateUser(user.id)
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User deactivated successfully');
 
-          if (this.user) {
-            this.user.active = response.active;
-          }
+          this.user.update(currentUser =>
+            currentUser
+              ? { ...currentUser, active: response.active }
+              : currentUser
+          );
 
           this.loadUser();
         }
       });
-  }
-
-  showActivateButton(): boolean {
-    return !!this.user &&
-      this.canManageLogin() &&
-      this.user.active === false;
-  }
-
-  showDeactivateButton(): boolean {
-    return !!this.user &&
-      this.canManageLogin() &&
-      this.user.active !== false;
   }
 
   getStatusClass(status?: MembershipStatus): string {
@@ -174,10 +203,10 @@ export class UserDetailComponent implements OnInit {
   }
 
   getLoginStatusText(): string {
-    return this.user?.active === false ? 'Inactive' : 'Active';
+    return this.user()?.active === false ? 'Inactive' : 'Active';
   }
 
   getLoginStatusClass(): string {
-    return this.user?.active === false ? 'text-bg-danger' : 'text-bg-success';
+    return this.user()?.active === false ? 'text-bg-danger' : 'text-bg-success';
   }
 }

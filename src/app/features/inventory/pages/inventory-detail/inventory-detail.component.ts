@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { InventoryApiService } from '../../services/inventory-api.service';
@@ -19,7 +26,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './inventory-detail.component.html',
-  styleUrl: './inventory-detail.component.scss'
+  styleUrl: './inventory-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InventoryDetailComponent implements OnInit {
 
@@ -32,47 +40,65 @@ export class InventoryDetailComponent implements OnInit {
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
 
-  bookId!: number;
-  inventory?: Inventory;
-  isLoading = false;
-  isSaving = false;
+  readonly bookId = signal<number | null>(null);
+  readonly inventory = signal<Inventory | null>(null);
 
-  addCopiesForm = this.formBuilder.group({
+  readonly isLoading = signal(false);
+  readonly isSaving = signal(false);
+
+  readonly addCopiesForm = this.formBuilder.group({
     copies: [1, [Validators.required, Validators.min(1)]]
   });
 
-  removeCopiesForm = this.formBuilder.group({
+  readonly removeCopiesForm = this.formBuilder.group({
     copies: [1, [Validators.required, Validators.min(1)]]
   });
 
-  adjustAvailableForm = this.formBuilder.group({
+  readonly adjustAvailableForm = this.formBuilder.group({
     availableCopies: [0, [Validators.required, Validators.min(0)]]
   });
 
   ngOnInit(): void {
-    this.bookId = Number(this.route.snapshot.paramMap.get('bookId'));
+    const id = Number(this.route.snapshot.paramMap.get('bookId'));
+
+    this.bookId.set(id);
+
     this.loadInventory();
   }
 
   loadInventory(): void {
-    this.isLoading = true;
+    const bookId = this.bookId();
 
-    this.inventoryApiService.getInventoryByBookId(this.bookId)
+    if (!bookId) {
+      this.inventory.set(null);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.inventoryApiService.getInventoryByBookId(bookId)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.inventory = response;
+          this.inventory.set(response);
+
           this.adjustAvailableForm.patchValue({
             availableCopies: response.availableCopies
           });
-          this.isLoading = false;
         },
         error: () => {
-          this.isLoading = false;
+          this.inventory.set(null);
         }
       });
   }
 
   addCopies(): void {
+    const bookId = this.bookId();
+
+    if (!bookId) {
+      return;
+    }
+
     if (this.addCopiesForm.invalid) {
       this.addCopiesForm.markAllAsTouched();
       return;
@@ -80,77 +106,90 @@ export class InventoryDetailComponent implements OnInit {
 
     const copies = Number(this.addCopiesForm.value.copies);
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
-    this.inventoryApiService.addCopies(this.bookId, { copies })
+    this.inventoryApiService.addCopies(bookId, { copies })
+      .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: response => {
-          this.inventory = response;
-          this.addCopiesForm.patchValue({ copies: 1 });
+          this.inventory.set(response);
+
+          this.addCopiesForm.patchValue({
+            copies: 1
+          });
+
           this.toastr.success('Copies added successfully');
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
         }
       });
   }
 
   async removeCopies(): Promise<void> {
-  if (this.removeCopiesForm.invalid) {
-    this.removeCopiesForm.markAllAsTouched();
-    return;
-  }
+    const bookId = this.bookId();
 
-  const copies = Number(this.removeCopiesForm.value.copies);
+    if (!bookId) {
+      return;
+    }
 
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Remove Copies',
-    message: `Are you sure you want to remove ${copies} copies?`,
-    confirmText: 'Remove',
-    cancelText: 'Cancel',
-    variant: 'danger'
-  });
+    if (this.removeCopiesForm.invalid) {
+      this.removeCopiesForm.markAllAsTouched();
+      return;
+    }
 
-  if (!confirmed) {
-    return;
-  }
+    const copies = Number(this.removeCopiesForm.value.copies);
 
-  this.isSaving = true;
-
-  this.inventoryApiService.removeCopies(this.bookId, { copies })
-    .subscribe({
-      next: response => {
-        this.inventory = response;
-        this.removeCopiesForm.patchValue({ copies: 1 });
-        this.toastr.success('Copies removed successfully');
-        this.isSaving = false;
-      },
-      error: () => {
-        this.isSaving = false;
-      }
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Remove Copies',
+      message: `Are you sure you want to remove ${copies} copies?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      variant: 'danger'
     });
-}
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.isSaving.set(true);
+
+    this.inventoryApiService.removeCopies(bookId, { copies })
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: response => {
+          this.inventory.set(response);
+
+          this.removeCopiesForm.patchValue({
+            copies: 1
+          });
+
+          this.toastr.success('Copies removed successfully');
+        }
+      });
+  }
 
   adjustAvailableCopies(): void {
+    const bookId = this.bookId();
+
+    if (!bookId) {
+      return;
+    }
+
     if (this.adjustAvailableForm.invalid) {
       this.adjustAvailableForm.markAllAsTouched();
       return;
     }
 
-    const availableCopies = Number(this.adjustAvailableForm.value.availableCopies);
+    const availableCopies = Number(
+      this.adjustAvailableForm.value.availableCopies
+    );
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
-    this.inventoryApiService.adjustAvailableCopies(this.bookId, { availableCopies })
+    this.inventoryApiService.adjustAvailableCopies(bookId, { availableCopies })
+      .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: response => {
-          this.inventory = response;
+          this.inventory.set(response);
           this.toastr.success('Available copies updated successfully');
-          this.isSaving = false;
-        },
-        error: () => {
-          this.isSaving = false;
         }
       });
   }
@@ -160,10 +199,10 @@ export class InventoryDetailComponent implements OnInit {
   }
 
   getAvailabilityClass(): string {
-    return this.inventory?.available ? 'text-bg-success' : 'text-bg-danger';
+    return this.inventory()?.available ? 'text-bg-success' : 'text-bg-danger';
   }
 
   getAvailabilityText(): string {
-    return this.inventory?.available ? 'Available' : 'Unavailable';
+    return this.inventory()?.available ? 'Available' : 'Unavailable';
   }
 }

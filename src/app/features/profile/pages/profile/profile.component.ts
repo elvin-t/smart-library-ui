@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { PermissionService } from '../../../../core/services/permission.service';
@@ -17,7 +25,8 @@ import { AuthService } from '../../../auth/services/auth.service';
     CommonModule
   ],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.scss'
+  styleUrl: './profile.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProfileComponent implements OnInit {
 
@@ -25,11 +34,22 @@ export class ProfileComponent implements OnInit {
   private readonly userApiService = inject(UserApiService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly permissionService = inject(PermissionService);
 
-  public readonly permissionService = inject(PermissionService);
+  readonly user = signal<User | null>(null);
+  readonly isLoading = signal(false);
 
-  user?: User;
-  isLoading = false;
+  readonly roles = computed(() =>
+    this.authService.getRoles()
+  );
+
+  readonly permissions = computed(() =>
+    this.authService.getPermissions()
+  );
+
+  readonly primaryRole = computed(() =>
+    this.permissionService.getPrimaryRole()
+  );
 
   ngOnInit(): void {
     this.loadProfile();
@@ -44,35 +64,22 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.userApiService.getUserById(userId)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.user = response;
-          this.isLoading = false;
+          this.user.set(response);
         },
         error: () => {
-          this.user = undefined;
-          this.isLoading = false;
+          this.user.set(null);
         }
       });
   }
 
   goToDashboard(): void {
     this.router.navigate(['/app/dashboard']);
-  }
-
-  get roles(): string[] {
-    return this.authService.getRoles();
-  }
-
-  get permissions(): string[] {
-    return this.authService.getPermissions();
-  }
-
-  get primaryRole(): string {
-    return this.permissionService.getPrimaryRole();
   }
 
   getStatusClass(status?: MembershipStatus): string {
@@ -92,10 +99,10 @@ export class ProfileComponent implements OnInit {
   }
 
   getLoginStatusText(): string {
-    return this.user?.active === false ? 'Inactive' : 'Active';
+    return this.user()?.active === false ? 'Inactive' : 'Active';
   }
 
   getLoginStatusClass(): string {
-    return this.user?.active === false ? 'text-bg-danger' : 'text-bg-success';
+    return this.user()?.active === false ? 'text-bg-danger' : 'text-bg-success';
   }
 }

@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { NotificationApiService } from '../../services/notification-api.service';
@@ -33,7 +41,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     FormsModule
   ],
   templateUrl: './notification-list.component.html',
-  styleUrl: './notification-list.component.scss'
+  styleUrl: './notification-list.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NotificationListComponent implements OnInit {
 
@@ -41,26 +50,64 @@ export class NotificationListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly permissionService = inject(PermissionService);
 
-  public readonly permissionService = inject(PermissionService);
+  readonly notificationTypes = NOTIFICATION_TYPES;
+  readonly notificationStatuses = NOTIFICATION_STATUSES;
+  readonly readFilters = NOTIFICATION_READ_FILTERS;
 
-  notifications: Notification[] = [];
-  allNotifications: Notification[] = [];
+  readonly allNotifications = signal<Notification[]>([]);
 
-  notificationTypes = NOTIFICATION_TYPES;
-  notificationStatuses = NOTIFICATION_STATUSES;
-  readFilters = NOTIFICATION_READ_FILTERS;
+  readonly selectedType = signal('');
+  readonly selectedStatus = signal('');
+  readonly selectedReadFilter = signal<NotificationReadFilter>(
+    NotificationReadFilter.ALL
+  );
 
-  selectedType = '';
-  selectedStatus = '';
-  selectedReadFilter: NotificationReadFilter = NotificationReadFilter.ALL;
+  readonly isLoading = signal(false);
 
-  isLoading = false;
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly notifications = computed(() => {
+    let filtered = [...this.allNotifications()];
+
+    const type = this.selectedType();
+    const status = this.selectedStatus();
+    const readFilter = this.selectedReadFilter();
+
+    if (type) {
+      filtered = filtered.filter(notification =>
+        notification.type === type
+      );
+    }
+
+    if (status) {
+      filtered = filtered.filter(notification =>
+        notification.status === status
+      );
+    }
+
+    if (readFilter === NotificationReadFilter.UNREAD) {
+      filtered = filtered.filter(notification => !notification.read);
+    }
+
+    if (readFilter === NotificationReadFilter.READ) {
+      filtered = filtered.filter(notification => notification.read);
+    }
+
+    return filtered;
+  });
+
+  readonly unreadCount = computed(() =>
+    this.allNotifications().filter(notification => !notification.read).length
+  );
+
+  readonly readCount = computed(() =>
+    this.allNotifications().filter(notification => notification.read).length
+  );
 
   ngOnInit(): void {
     this.loadNotifications();
@@ -76,16 +123,15 @@ export class NotificationListComponent implements OnInit {
   }
 
   loadAllNotifications(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.notificationApiService.getAllNotifications(this.page, this.size)
+    this.notificationApiService.getAllNotifications(this.page(), this.size())
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.allNotifications = response?.content ?? [];
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? this.allNotifications.length;
-          this.applyLocalFilters();
-          this.isLoading = false;
+          this.allNotifications.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? this.allNotifications().length);
         },
         error: () => {
           this.resetData();
@@ -101,16 +147,19 @@ export class NotificationListComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.notificationApiService.getNotificationsByUser(userId, this.page, this.size)
+    this.notificationApiService.getNotificationsByUser(
+      userId,
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.allNotifications = response?.content ?? [];
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? this.allNotifications.length;
-          this.applyLocalFilters();
-          this.isLoading = false;
+          this.allNotifications.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? this.allNotifications().length);
         },
         error: () => {
           this.resetData();
@@ -119,50 +168,34 @@ export class NotificationListComponent implements OnInit {
   }
 
   private resetData(): void {
-    this.notifications = [];
-    this.allNotifications = [];
-    this.totalPages = 0;
-    this.totalElements = 0;
-    this.isLoading = false;
+    this.allNotifications.set([]);
+    this.totalPages.set(0);
+    this.totalElements.set(0);
+    this.isLoading.set(false);
   }
 
   applyFilters(): void {
-    this.page = 0;
-    this.applyLocalFilters();
+    this.page.set(0);
   }
 
   clearFilters(): void {
-    this.selectedType = '';
-    this.selectedStatus = '';
-    this.selectedReadFilter = NotificationReadFilter.ALL;
-    this.page = 0;
+    this.selectedType.set('');
+    this.selectedStatus.set('');
+    this.selectedReadFilter.set(NotificationReadFilter.ALL);
+    this.page.set(0);
     this.loadNotifications();
   }
 
-  applyLocalFilters(): void {
-    let filtered = [...this.allNotifications];
+  onTypeChange(value: string): void {
+    this.selectedType.set(value);
+  }
 
-    if (this.selectedType) {
-      filtered = filtered.filter(notification =>
-        notification.type === this.selectedType
-      );
-    }
+  onStatusChange(value: string): void {
+    this.selectedStatus.set(value);
+  }
 
-    if (this.selectedStatus) {
-      filtered = filtered.filter(notification =>
-        notification.status === this.selectedStatus
-      );
-    }
-
-    if (this.selectedReadFilter === NotificationReadFilter.UNREAD) {
-      filtered = filtered.filter(notification => !notification.read);
-    }
-
-    if (this.selectedReadFilter === NotificationReadFilter.READ) {
-      filtered = filtered.filter(notification => notification.read);
-    }
-
-    this.notifications = filtered;
+  onReadFilterChange(value: NotificationReadFilter): void {
+    this.selectedReadFilter.set(value);
   }
 
   markAsRead(notification: Notification): void {
@@ -173,63 +206,64 @@ export class NotificationListComponent implements OnInit {
     this.notificationApiService.markAsRead(notification.id)
       .subscribe({
         next: response => {
-          notification.read = response.read;
-          notification.readAt = response.readAt;
+          this.allNotifications.update(notifications =>
+            notifications.map(item =>
+              item.id === notification.id
+                ? {
+                    ...item,
+                    read: response.read ?? true,
+                    readAt: response.readAt ?? item.readAt
+                  }
+                : item
+            )
+          );
+
           this.toastr.success('Notification marked as read');
-          this.applyLocalFilters();
         }
       });
   }
 
- async markAllAsRead(): Promise<void> {
-  const userId = this.authService.getUserId();
+  async markAllAsRead(): Promise<void> {
+    const userId = this.authService.getUserId();
 
-  if (!userId) {
-    this.toastr.error('User ID not found in token');
-    return;
-  }
+    if (!userId) {
+      this.toastr.error('User ID not found in token');
+      return;
+    }
 
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Mark All Notifications as Read',
-    message: 'Are you sure you want to mark all notifications as read?',
-    confirmText: 'Mark All Read',
-    cancelText: 'Cancel',
-    variant: 'primary'
-  });
-
-  if (!confirmed) {
-    return;
-  }
-
-  this.notificationApiService.markAllAsReadByUser(userId)
-    .subscribe({
-      next: () => {
-        this.toastr.success('All notifications marked as read');
-        this.loadNotifications();
-      }
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Mark All Notifications as Read',
+      message: 'Are you sure you want to mark all notifications as read?',
+      confirmText: 'Mark All Read',
+      cancelText: 'Cancel',
+      variant: 'primary'
     });
-}
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.notificationApiService.markAllAsReadByUser(userId)
+      .subscribe({
+        next: () => {
+          this.toastr.success('All notifications marked as read');
+          this.loadNotifications();
+        }
+      });
+  }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
       this.loadNotifications();
     }
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
       this.loadNotifications();
     }
-  }
-
-  get unreadCount(): number {
-    return this.allNotifications.filter(notification => !notification.read).length;
-  }
-
-  get readCount(): number {
-    return this.allNotifications.filter(notification => notification.read).length;
   }
 
   getStatusClass(status: NotificationStatus): string {

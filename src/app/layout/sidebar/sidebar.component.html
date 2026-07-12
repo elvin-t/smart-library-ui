@@ -11,8 +11,8 @@
   </div>
 
   <nav class="sidebar-nav">
+    @for (item of visibleMenuItems(); track item.route) {
     <a
-      *ngFor="let item of visibleMenuItems()"
       [routerLink]="item.route"
       routerLinkActive="active"
       class="nav-link">
@@ -20,6 +20,7 @@
       <i [class]="item.icon"></i>
       <span>{{ item.label }}</span>
     </a>
+    }
   </nav>
 
   <div class="sidebar-footer">

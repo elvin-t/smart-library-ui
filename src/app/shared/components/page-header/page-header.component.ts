@@ -1,5 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -10,15 +14,18 @@ import { RouterLink } from '@angular/router';
     RouterLink
   ],
   templateUrl: './page-header.component.html',
-  styleUrl: './page-header.component.scss'
+  styleUrl: './page-header.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PageHeaderComponent {
 
-  @Input() title = '';
-  @Input() description = '';
-  @Input() backRoute?: string;
-  @Input() actionLabel?: string;
-  @Input() actionRoute?: string;
-  @Input() actionIcon = 'bi bi-plus-circle';
-  @Input() showAction = false;
+  readonly title = input('');
+  readonly description = input('');
+
+  readonly backRoute = input<string | undefined>(undefined);
+
+  readonly actionLabel = input<string | undefined>(undefined);
+  readonly actionRoute = input<string | undefined>(undefined);
+  readonly actionIcon = input('bi bi-plus-circle');
+  readonly showAction = input(false);
 }

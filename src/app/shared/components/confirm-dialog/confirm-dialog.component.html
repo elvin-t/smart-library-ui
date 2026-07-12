@@ -1,17 +1,20 @@
-<div class="modal-backdrop-custom" *ngIf="isVisible"></div>
+@if (isVisible()) {
+<div class="modal-backdrop-custom"></div>
+}
 
-<div class="confirm-modal-wrapper" *ngIf="isVisible">
+@if (isVisible()) {
+<div class="confirm-modal-wrapper">
   <div class="confirm-modal">
 
-    <div class="confirm-icon" [ngClass]="iconWrapperClass">
-      <i [class]="iconClass"></i>
+    <div class="confirm-icon" [ngClass]="iconWrapperClass()">
+      <i [class]="iconClass()"></i>
     </div>
 
     <div class="confirm-content">
-      <h5>{{ request?.title }}</h5>
+      <h5>{{ request()?.title }}</h5>
 
       <p class="text-muted">
-        {{ request?.message }}
+        {{ request()?.message }}
       </p>
     </div>
 
@@ -20,17 +23,18 @@
         type="button"
         class="btn btn-outline-secondary"
         (click)="cancel()">
-        {{ request?.cancelText }}
+        {{ request()?.cancelText }}
       </button>
 
       <button
         type="button"
         class="btn"
-        [ngClass]="confirmButtonClass"
+        [ngClass]="confirmButtonClass()"
         (click)="confirm()">
-        {{ request?.confirmText }}
+        {{ request()?.confirmText }}
       </button>
     </div>
 
   </div>
 </div>
+}

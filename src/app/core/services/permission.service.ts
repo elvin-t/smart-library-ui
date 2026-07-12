@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+
 import { TokenService } from './token.service';
 import { ROLES } from '../constants/roles';
 
@@ -7,18 +8,66 @@ import { ROLES } from '../constants/roles';
 })
 export class PermissionService {
 
-  constructor(private tokenService: TokenService) {}
+  private readonly tokenService = inject(TokenService);
+
+  private readonly rolesSignal = signal<string[]>([]);
+  private readonly permissionsSignal = signal<string[]>([]);
+
+  readonly roles = this.rolesSignal.asReadonly();
+  readonly permissions = this.permissionsSignal.asReadonly();
+
+  readonly primaryRole = computed(() => {
+    if (this.rolesSignal().includes(ROLES.ADMIN)) {
+      return ROLES.ADMIN;
+    }
+
+    if (this.rolesSignal().includes(ROLES.LIBRARIAN)) {
+      return ROLES.LIBRARIAN;
+    }
+
+    if (this.rolesSignal().includes(ROLES.MEMBER)) {
+      return ROLES.MEMBER;
+    }
+
+    return 'USER';
+  });
+
+  readonly isAdminSignal = computed(() =>
+    this.rolesSignal().includes(ROLES.ADMIN)
+  );
+
+  readonly isLibrarianSignal = computed(() =>
+    this.rolesSignal().includes(ROLES.LIBRARIAN)
+  );
+
+  readonly isMemberSignal = computed(() =>
+    this.rolesSignal().includes(ROLES.MEMBER)
+  );
+
+  constructor() {
+    this.loadFromToken();
+  }
+
+  loadFromToken(): void {
+    this.rolesSignal.set(this.tokenService.getRoles());
+    this.permissionsSignal.set(this.tokenService.getPermissions());
+  }
+
+  clear(): void {
+    this.rolesSignal.set([]);
+    this.permissionsSignal.set([]);
+  }
 
   getRoles(): string[] {
-    return this.tokenService.getRoles();
+    return this.rolesSignal();
   }
 
   getPermissions(): string[] {
-    return this.tokenService.getPermissions();
+    return this.permissionsSignal();
   }
 
   hasPermission(permission: string): boolean {
-    return this.getPermissions().includes(permission);
+    return this.permissionsSignal().includes(permission);
   }
 
   hasAnyPermission(permissions?: string[]): boolean {
@@ -26,7 +75,9 @@ export class PermissionService {
       return true;
     }
 
-    return permissions.some(permission => this.hasPermission(permission));
+    return permissions.some(permission =>
+      this.hasPermission(permission)
+    );
   }
 
   hasAllPermissions(permissions?: string[]): boolean {
@@ -34,11 +85,13 @@ export class PermissionService {
       return true;
     }
 
-    return permissions.every(permission => this.hasPermission(permission));
+    return permissions.every(permission =>
+      this.hasPermission(permission)
+    );
   }
 
   hasRole(role: string): boolean {
-    return this.getRoles().includes(role);
+    return this.rolesSignal().includes(role);
   }
 
   hasAnyRole(roles?: string[]): boolean {
@@ -46,7 +99,9 @@ export class PermissionService {
       return true;
     }
 
-    return roles.some(role => this.hasRole(role));
+    return roles.some(role =>
+      this.hasRole(role)
+    );
   }
 
   canDisplay(permissions?: string[], roles?: string[]): boolean {
@@ -57,30 +112,18 @@ export class PermissionService {
   }
 
   isAdmin(): boolean {
-    return this.hasRole(ROLES.ADMIN);
+    return this.isAdminSignal();
   }
 
   isLibrarian(): boolean {
-    return this.hasRole(ROLES.LIBRARIAN);
+    return this.isLibrarianSignal();
   }
 
   isMember(): boolean {
-    return this.hasRole(ROLES.MEMBER);
+    return this.isMemberSignal();
   }
 
   getPrimaryRole(): string {
-    if (this.isAdmin()) {
-      return ROLES.ADMIN;
-    }
-
-    if (this.isLibrarian()) {
-      return ROLES.LIBRARIAN;
-    }
-
-    if (this.isMember()) {
-      return ROLES.MEMBER;
-    }
-
-    return 'USER';
+    return this.primaryRole();
   }
 }

@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
+
 import { StorageService } from './storage.service';
 
 interface JwtPayload {
@@ -16,24 +17,18 @@ interface JwtPayload {
 })
 export class TokenService {
 
+  private readonly storageService = inject(StorageService);
+
   private readonly TOKEN_KEY = 'smart_library_token';
 
-  constructor(private storageService: StorageService) {}
+  private readonly tokenSignal = signal<string | null>(
+    this.storageService.getItem(this.TOKEN_KEY)
+  );
 
-  saveToken(token: string): void {
-    this.storageService.setItem(this.TOKEN_KEY, token);
-  }
+  readonly token = this.tokenSignal.asReadonly();
 
-  getToken(): string | null {
-    return this.storageService.getItem(this.TOKEN_KEY);
-  }
-
-  removeToken(): void {
-    this.storageService.removeItem(this.TOKEN_KEY);
-  }
-
-  decodeToken(): JwtPayload | null {
-    const token = this.getToken();
+  readonly decodedToken = computed<JwtPayload | null>(() => {
+    const token = this.tokenSignal();
 
     if (!token) {
       return null;
@@ -44,40 +39,83 @@ export class TokenService {
     } catch {
       return null;
     }
-  }
+  });
 
-  getEmail(): string | null {
-    const payload = this.decodeToken();
-    return payload?.sub ?? null;
-  }
+  readonly email = computed(() =>
+    this.decodedToken()?.sub ?? null
+  );
 
-  getUserId(): number | null {
-    const payload = this.decodeToken();
-    return payload?.userId ?? null;
-  }
+  readonly userId = computed(() =>
+    this.decodedToken()?.userId ?? null
+  );
 
-  getRoles(): string[] {
-    const payload = this.decodeToken();
-    return payload?.roles ?? [];
-  }
+  readonly roles = computed(() =>
+    this.decodedToken()?.roles ?? []
+  );
 
-  getPermissions(): string[] {
-    const payload = this.decodeToken();
-    return payload?.permissions ?? [];
-  }
+  readonly permissions = computed(() =>
+    this.decodedToken()?.permissions ?? []
+  );
 
-  isTokenExpired(): boolean {
-    const payload = this.decodeToken();
+  readonly isExpired = computed(() => {
+    const exp = this.decodedToken()?.exp;
 
-    if (!payload?.exp) {
+    if (!exp) {
       return true;
     }
 
-    const expiryTime = payload.exp * 1000;
+    const expiryTime = exp * 1000;
+
     return Date.now() >= expiryTime;
+  });
+
+  readonly isValid = computed(() =>
+    !!this.tokenSignal() && !this.isExpired()
+  );
+
+  readonly isAuthenticated = computed(() =>
+    this.isValid()
+  );
+
+  saveToken(token: string): void {
+    this.storageService.setItem(this.TOKEN_KEY, token);
+    this.tokenSignal.set(token);
+  }
+
+  getToken(): string | null {
+    return this.tokenSignal();
+  }
+
+  removeToken(): void {
+    this.storageService.removeItem(this.TOKEN_KEY);
+    this.tokenSignal.set(null);
+  }
+
+  decodeToken(): JwtPayload | null {
+    return this.decodedToken();
+  }
+
+  getEmail(): string | null {
+    return this.email();
+  }
+
+  getUserId(): number | null {
+    return this.userId();
+  }
+
+  getRoles(): string[] {
+    return this.roles();
+  }
+
+  getPermissions(): string[] {
+    return this.permissions();
+  }
+
+  isTokenExpired(): boolean {
+    return this.isExpired();
   }
 
   isTokenValid(): boolean {
-    return !!this.getToken() && !this.isTokenExpired();
+    return this.isValid();
   }
 }

@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { BorrowApiService } from '../../services/borrow-api.service';
@@ -20,7 +28,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './borrow-detail.component.html',
-  styleUrl: './borrow-detail.component.scss'
+  styleUrl: './borrow-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BorrowDetailComponent implements OnInit {
 
@@ -32,137 +41,169 @@ export class BorrowDetailComponent implements OnInit {
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
 
-  borrowRecordId!: number;
-  record?: BorrowRecord;
-  fine?: FineResponse;
+  readonly borrowRecordId = signal<number | null>(null);
+  readonly record = signal<BorrowRecord | null>(null);
+  readonly fine = signal<FineResponse | null>(null);
 
-  isLoading = false;
-  isSaving = false;
+  readonly isLoading = signal(false);
+  readonly isSaving = signal(false);
+
+  readonly canReturn = computed(() => {
+    const record = this.record();
+
+    return !!record &&
+      record.status === BorrowStatus.BORROWED &&
+      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+  });
+
+  readonly canPayFine = computed(() => {
+    const fine = this.fine();
+
+    return !!fine &&
+      fine.fineAmount > 0 &&
+      !fine.finePaid &&
+      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+  });
 
   ngOnInit(): void {
-    this.borrowRecordId = Number(this.route.snapshot.paramMap.get('id'));
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+
+    this.borrowRecordId.set(id);
+
     this.loadDetails();
   }
 
   loadDetails(): void {
-    this.isLoading = true;
+    const borrowRecordId = this.borrowRecordId();
 
-    this.borrowApiService.getBorrowRecordById(this.borrowRecordId)
+    if (!borrowRecordId) {
+      this.record.set(null);
+      this.fine.set(null);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.borrowApiService.getBorrowRecordById(borrowRecordId)
       .subscribe({
         next: response => {
-          this.record = response;
+          this.record.set(response);
           this.loadFineDetails();
         },
         error: () => {
-          this.isLoading = false;
+          this.record.set(null);
+          this.fine.set(null);
+          this.isLoading.set(false);
         }
       });
   }
 
   loadFineDetails(): void {
-    this.borrowApiService.getFineDetails(this.borrowRecordId)
+    const borrowRecordId = this.borrowRecordId();
+
+    if (!borrowRecordId) {
+      this.fine.set(null);
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.borrowApiService.getFineDetails(borrowRecordId)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.fine = response;
-          this.isLoading = false;
+          this.fine.set(response);
         },
         error: () => {
-          this.isLoading = false;
+          this.fine.set(null);
         }
       });
   }
 
- async returnBook(): Promise<void> {
-  if (!this.record) {
-    return;
-  }
+  async returnBook(): Promise<void> {
+    const record = this.record();
 
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Return Book',
-    message: `Are you sure you want to return borrow record #${this.record.id}?`,
-    confirmText: 'Return',
-    cancelText: 'Cancel',
-    variant: 'success'
-  });
+    if (!record) {
+      return;
+    }
 
-  if (!confirmed) {
-    return;
-  }
-
-  this.isSaving = true;
-
-  this.borrowApiService.returnBook(this.record.id)
-    .subscribe({
-      next: response => {
-        this.record = response;
-        this.toastr.success('Book returned successfully');
-        this.loadFineDetails();
-        this.isSaving = false;
-      },
-      error: () => {
-        this.isSaving = false;
-      }
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Return Book',
+      message: `Are you sure you want to return borrow record #${record.id}?`,
+      confirmText: 'Return',
+      cancelText: 'Cancel',
+      variant: 'success'
     });
-}
 
- async markFineAsPaid(): Promise<void> {
-  if (!this.record) {
-    return;
-  }
+    if (!confirmed) {
+      return;
+    }
 
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Mark Fine as Paid',
-    message: `Mark fine as paid for borrow record #${this.record.id}?`,
-    confirmText: 'Mark Paid',
-    cancelText: 'Cancel',
-    variant: 'success'
-  });
+    this.isSaving.set(true);
 
-  if (!confirmed) {
-    return;
-  }
-
-  this.isSaving = true;
-
-  this.borrowApiService.markFineAsPaid(this.record.id)
-    .subscribe({
-      next: response => {
-        this.fine = response;
-
-        if (this.record) {
-          this.record.finePaid = response.finePaid;
-          this.record.finePaidAt = response.finePaidAt;
+    this.borrowApiService.returnBook(record.id)
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: response => {
+          this.record.set(response);
+          this.toastr.success('Book returned successfully');
+          this.loadFineDetails();
         }
-
-        this.toastr.success('Fine marked as paid');
-        this.isSaving = false;
-      },
-      error: () => {
-        this.isSaving = false;
-      }
-    });
-}
-
-  canReturn(): boolean {
-    return this.record?.status === BorrowStatus.BORROWED &&
-      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+      });
   }
 
-  canPayFine(): boolean {
-    return !!this.fine &&
-      this.fine.fineAmount > 0 &&
-      !this.fine.finePaid &&
-      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+  async markFineAsPaid(): Promise<void> {
+    const record = this.record();
+
+    if (!record) {
+      return;
+    }
+
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Mark Fine as Paid',
+      message: `Mark fine as paid for borrow record #${record.id}?`,
+      confirmText: 'Mark Paid',
+      cancelText: 'Cancel',
+      variant: 'success'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.isSaving.set(true);
+
+    this.borrowApiService.markFineAsPaid(record.id)
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: response => {
+          this.fine.set(response);
+
+          this.record.update(currentRecord =>
+            currentRecord
+              ? {
+                  ...currentRecord,
+                  finePaid: response.finePaid,
+                  finePaidAt: response.finePaidAt
+                }
+              : currentRecord
+          );
+
+          this.toastr.success('Fine marked as paid');
+        }
+      });
   }
 
   getStatusClass(status?: BorrowStatus): string {
     switch (status) {
       case BorrowStatus.BORROWED:
         return 'text-bg-primary';
+
       case BorrowStatus.RETURNED:
         return 'text-bg-success';
+
       case BorrowStatus.OVERDUE:
         return 'text-bg-danger';
+
       default:
         return 'text-bg-secondary';
     }

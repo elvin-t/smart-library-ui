@@ -8,7 +8,7 @@
       </p>
     </div>
 
-    <a [routerLink]="backRoute" class="btn btn-outline-secondary">
+    <a [routerLink]="backRoute()" class="btn btn-outline-secondary">
       Back
     </a>
   </div>
@@ -17,7 +17,8 @@
 
     <div class="row g-3">
 
-      <div class="col-md-6" *ngIf="!permissionService.isMember()">
+      @if (!permissionService.isMember()) {
+      <div class="col-md-6">
         <label class="form-label">User ID</label>
 
         <input
@@ -31,6 +32,7 @@
           For Admin/Librarian use only.
         </small>
       </div>
+      }
 
       <div class="col-md-6">
         <label class="form-label">Book</label>
@@ -38,23 +40,30 @@
         <select class="form-select" formControlName="bookId">
           <option [ngValue]="null">Select available book</option>
 
-          <option *ngFor="let book of availableBooks" [ngValue]="book.id">
+          @for (book of availableBooks(); track book.id) {
+          <option [ngValue]="book.id">
             {{ book.title }} - {{ book.author }} - {{ book.availableCopies }} available
           </option>
+          }
         </select>
 
-        <small class="text-muted" *ngIf="isLoadingBooks">
+        @if (isLoadingBooks()) {
+        <small class="text-muted">
           Loading available books...
         </small>
+        }
 
-        <small class="text-danger" *ngIf="!isLoadingBooks && availableBooks.length === 0">
+        @if (!isLoadingBooks() && availableBooks().length === 0) {
+        <small class="text-danger">
           No available books found for borrowing.
         </small>
+        }
       </div>
 
     </div>
 
-    <div class="selected-book-card mt-4" *ngIf="selectedBook">
+    @if (selectedBook(); as selectedBook) {
+    <div class="selected-book-card mt-4">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <h5>{{ selectedBook.title }}</h5>
@@ -62,8 +71,8 @@
         </div>
 
         <span class="badge text-bg-success">
-          Available
-        </span>
+            Available
+          </span>
       </div>
 
       <div class="row mt-2">
@@ -83,16 +92,19 @@
         </div>
       </div>
     </div>
+    }
 
-    <div class="alert alert-info mt-4" *ngIf="permissionService.isMember()">
+    @if (permissionService.isMember()) {
+    <div class="alert alert-info mt-4">
       <i class="bi bi-info-circle me-1"></i>
       Your user account will be selected automatically from your login session.
     </div>
+    }
 
     <div class="form-actions mt-4">
       <button
         type="button"
-        [routerLink]="backRoute"
+        [routerLink]="backRoute()"
         class="btn btn-outline-secondary">
         Cancel
       </button>
@@ -100,14 +112,18 @@
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="isSaving || availableBooks.length === 0">
+        [disabled]="isSaving() || availableBooks().length === 0">
 
-        <span *ngIf="!isSaving">Borrow Book</span>
+        @if (!isSaving()) {
+        <span>Borrow Book</span>
+        }
 
-        <span *ngIf="isSaving">
-          <span class="spinner-border spinner-border-sm me-1"></span>
-          Borrowing...
-        </span>
+        @if (isSaving()) {
+        <span>
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            Borrowing...
+          </span>
+        }
       </button>
     </div>
 

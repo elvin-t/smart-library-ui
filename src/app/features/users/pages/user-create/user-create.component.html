@@ -28,9 +28,11 @@
           [class.is-invalid]="fullNameInvalid"
         />
 
-        <div class="invalid-feedback" *ngIf="fullNameInvalid">
+        @if (fullNameInvalid) {
+        <div class="invalid-feedback">
           Full name is required.
         </div>
+        }
       </div>
 
       <div class="col-md-6">
@@ -44,9 +46,11 @@
           [class.is-invalid]="emailInvalid"
         />
 
-        <div class="invalid-feedback" *ngIf="emailInvalid">
+        @if (emailInvalid) {
+        <div class="invalid-feedback">
           Please enter a valid email.
         </div>
+        }
       </div>
 
       <div class="col-md-6">
@@ -68,14 +72,18 @@
           formControlName="role"
           [class.is-invalid]="roleInvalid">
 
-          <option *ngFor="let role of roles" [value]="role.value">
+          @for (role of roles; track role.value) {
+          <option [value]="role.value">
             {{ role.label }}
           </option>
+          }
         </select>
 
-        <div class="invalid-feedback" *ngIf="roleInvalid">
+        @if (roleInvalid) {
+        <div class="invalid-feedback">
           Role is required.
         </div>
+        }
       </div>
 
       <div class="col-md-6">
@@ -83,7 +91,7 @@
 
         <div class="input-group">
           <input
-            [type]="showPassword ? 'text' : 'password'"
+            [type]="showPassword() ? 'text' : 'password'"
             class="form-control"
             formControlName="password"
             placeholder="Minimum 6 characters"
@@ -96,14 +104,16 @@
             (click)="togglePassword()">
             <i
               class="bi"
-              [class.bi-eye]="!showPassword"
-              [class.bi-eye-slash]="showPassword">
+              [class.bi-eye]="!showPassword()"
+              [class.bi-eye-slash]="showPassword()">
             </i>
           </button>
 
-          <div class="invalid-feedback" *ngIf="passwordInvalid">
+          @if (passwordInvalid) {
+          <div class="invalid-feedback">
             Password must be at least 6 characters.
           </div>
+          }
         </div>
       </div>
 
@@ -122,13 +132,17 @@
         Cancel
       </button>
 
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
-        <span *ngIf="!isSaving">Create User</span>
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+        @if (!isSaving()) {
+        <span>Create User</span>
+        }
 
-        <span *ngIf="isSaving">
-          <span class="spinner-border spinner-border-sm me-1"></span>
-          Creating...
-        </span>
+        @if (isSaving()) {
+        <span>
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            Creating...
+          </span>
+        }
       </button>
     </div>
 

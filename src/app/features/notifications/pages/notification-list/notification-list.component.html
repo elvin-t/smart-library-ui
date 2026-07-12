@@ -11,7 +11,7 @@
     <button
       type="button"
       class="btn btn-outline-primary"
-      [disabled]="unreadCount === 0"
+      [disabled]="unreadCount() === 0"
       (click)="markAllAsRead()">
       <i class="bi bi-check2-all me-1"></i>
       Mark All Read
@@ -21,17 +21,17 @@
   <div class="summary-row mt-3">
     <div class="summary-card">
       <span>Total</span>
-      <h4>{{ allNotifications.length }}</h4>
+      <h4>{{ allNotifications().length }}</h4>
     </div>
 
     <div class="summary-card unread">
       <span>Unread</span>
-      <h4>{{ unreadCount }}</h4>
+      <h4>{{ unreadCount() }}</h4>
     </div>
 
     <div class="summary-card read">
       <span>Read</span>
-      <h4>{{ readCount }}</h4>
+      <h4>{{ readCount() }}</h4>
     </div>
   </div>
 
@@ -41,34 +41,52 @@
       <div class="col-md-3">
         <label class="form-label">Notification Type</label>
 
-        <select class="form-select" [(ngModel)]="selectedType">
+        <select
+          class="form-select"
+          [ngModel]="selectedType()"
+          (ngModelChange)="onTypeChange($event)">
+
           <option value="">All Types</option>
 
-          <option *ngFor="let type of notificationTypes" [value]="type.value">
+          @for (type of notificationTypes; track type.value) {
+          <option [value]="type.value">
             {{ type.label }}
           </option>
+          }
         </select>
       </div>
 
       <div class="col-md-3">
         <label class="form-label">Status</label>
 
-        <select class="form-select" [(ngModel)]="selectedStatus">
+        <select
+          class="form-select"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="onStatusChange($event)">
+
           <option value="">All Status</option>
 
-          <option *ngFor="let status of notificationStatuses" [value]="status.value">
+          @for (status of notificationStatuses; track status.value) {
+          <option [value]="status.value">
             {{ status.label }}
           </option>
+          }
         </select>
       </div>
 
       <div class="col-md-3">
         <label class="form-label">Read Status</label>
 
-        <select class="form-select" [(ngModel)]="selectedReadFilter">
-          <option *ngFor="let filter of readFilters" [value]="filter.value">
+        <select
+          class="form-select"
+          [ngModel]="selectedReadFilter()"
+          (ngModelChange)="onReadFilterChange($event)">
+
+          @for (filter of readFilters; track filter.value) {
+          <option [value]="filter.value">
             {{ filter.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -87,25 +105,30 @@
 
   <div class="notification-card mt-3">
 
-    <div *ngIf="isLoading" class="text-center py-5">
+    @if (isLoading()) {
+    <div class="text-center py-5">
       <div class="spinner-border text-primary"></div>
       <p class="text-muted mt-2">Loading notifications...</p>
     </div>
+    }
 
-    <div *ngIf="!isLoading && notifications.length === 0" class="empty-state">
+    @if (!isLoading() && notifications().length === 0) {
+    <div class="empty-state">
       <i class="bi bi-bell-slash"></i>
       <h5>No notifications found</h5>
       <p class="text-muted">
         There are no notifications for the selected filter.
       </p>
     </div>
+    }
 
-    <div *ngIf="!isLoading && notifications.length > 0" class="notification-list">
+    @if (!isLoading() && notifications().length > 0) {
+    <div class="notification-list">
 
+      @for (notification of notifications(); track notification.id) {
       <div
         class="notification-item"
-        [class.unread-item]="!notification.read"
-        *ngFor="let notification of notifications">
+        [class.unread-item]="!notification.read">
 
         <div class="notification-icon">
           <i [class]="getTypeIcon(notification.type)"></i>
@@ -118,7 +141,9 @@
               <h6>
                 {{ notification.subject }}
 
-                <span class="unread-dot" *ngIf="!notification.read"></span>
+                @if (!notification.read) {
+                <span class="unread-dot"></span>
+                }
               </h6>
 
               <small class="text-muted">
@@ -127,13 +152,13 @@
             </div>
 
             <div class="d-flex gap-2 flex-wrap">
-              <span class="badge" [ngClass]="getStatusClass(notification.status)">
-                {{ notification.status }}
-              </span>
+                  <span class="badge" [ngClass]="getStatusClass(notification.status)">
+                    {{ notification.status }}
+                  </span>
 
               <span class="badge" [ngClass]="getReadStatusClass(notification)">
-                {{ getReadStatusText(notification) }}
-              </span>
+                    {{ getReadStatusText(notification) }}
+                  </span>
             </div>
           </div>
 
@@ -142,70 +167,81 @@
           </p>
 
           <div class="meta">
+                <span>
+                  <i class="bi bi-person me-1"></i>
+                  User ID: {{ notification.userId }}
+                </span>
+
+            @if (notification.bookId) {
             <span>
-              <i class="bi bi-person me-1"></i>
-              User ID: {{ notification.userId }}
-            </span>
+                    <i class="bi bi-book me-1"></i>
+                    Book ID: {{ notification.bookId }}
+                  </span>
+            }
 
-            <span *ngIf="notification.bookId">
-              <i class="bi bi-book me-1"></i>
-              Book ID: {{ notification.bookId }}
-            </span>
-
-            <span *ngIf="notification.borrowRecordId">
-              <i class="bi bi-arrow-left-right me-1"></i>
-              Borrow ID: {{ notification.borrowRecordId }}
-            </span>
+            @if (notification.borrowRecordId) {
+            <span>
+                    <i class="bi bi-arrow-left-right me-1"></i>
+                    Borrow ID: {{ notification.borrowRecordId }}
+                  </span>
+            }
 
             <span>
-              <i class="bi bi-clock me-1"></i>
-              {{ notification.createdAt | date:'medium' }}
-            </span>
+                  <i class="bi bi-clock me-1"></i>
+                  {{ notification.createdAt | date:'medium' }}
+                </span>
 
-            <span *ngIf="notification.readAt">
-              <i class="bi bi-check2-circle me-1"></i>
-              Read at {{ notification.readAt | date:'medium' }}
-            </span>
+            @if (notification.readAt) {
+            <span>
+                    <i class="bi bi-check2-circle me-1"></i>
+                    Read at {{ notification.readAt | date:'medium' }}
+                  </span>
+            }
           </div>
 
           <div class="notification-actions mt-3">
+            @if (!notification.read) {
             <button
-              *ngIf="!notification.read"
               type="button"
               class="btn btn-sm btn-outline-primary"
               (click)="markAsRead(notification)">
               <i class="bi bi-check2 me-1"></i>
               Mark as Read
             </button>
+            }
           </div>
 
         </div>
 
       </div>
+      }
 
     </div>
+    }
 
-    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
-      <span class="text-muted">
-        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
-      </span>
+    @if (!isLoading() && totalPages() > 0) {
+    <div class="pagination-bar">
+        <span class="text-muted">
+          Page {{ page() + 1 }} of {{ totalPages() }} · Total {{ totalElements() }}
+        </span>
 
       <div>
         <button
           class="btn btn-sm btn-outline-secondary me-2"
-          [disabled]="page === 0"
+          [disabled]="page() === 0"
           (click)="previousPage()">
           Previous
         </button>
 
         <button
           class="btn btn-sm btn-outline-secondary"
-          [disabled]="page + 1 >= totalPages"
+          [disabled]="page() + 1 >= totalPages()"
           (click)="nextPage()">
           Next
         </button>
       </div>
     </div>
+    }
 
   </div>
 

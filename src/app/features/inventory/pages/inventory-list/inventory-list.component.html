@@ -25,7 +25,8 @@
         <input
           type="text"
           class="form-control"
-          [(ngModel)]="keyword"
+          [ngModel]="keyword()"
+          (ngModelChange)="onKeywordChange($event)"
           placeholder="Search by title, author, or ISBN"
           (keyup.enter)="searchBooks()"
         />
@@ -47,100 +48,110 @@
 
   <div class="table-card mt-3">
 
-    <div *ngIf="isLoading" class="text-center py-5">
+    @if (isLoading()) {
+    <div class="text-center py-5">
       <div class="spinner-border text-primary"></div>
       <p class="text-muted mt-2">Loading inventory...</p>
     </div>
+    }
 
-    <div *ngIf="!isLoading && books.length === 0" class="empty-state">
+    @if (!isLoading() && books().length === 0) {
+    <div class="empty-state">
       <i class="bi bi-box-seam"></i>
       <h5>No books found</h5>
       <p class="text-muted">
         Try searching with a different title, author, or ISBN.
       </p>
     </div>
+    }
 
-    <div class="table-responsive" *ngIf="!isLoading && books.length > 0">
+    @if (!isLoading() && books().length > 0) {
+    <div class="table-responsive">
       <table class="table align-middle">
         <thead>
-          <tr>
-            <th>Book</th>
-            <th>ISBN</th>
-            <th>Genre</th>
-            <th>Total Copies</th>
-            <th>Available</th>
-            <th>Borrowed</th>
-            <th>Status</th>
-            <th class="text-end">Actions</th>
-          </tr>
+        <tr>
+          <th>Book</th>
+          <th>ISBN</th>
+          <th>Genre</th>
+          <th>Total Copies</th>
+          <th>Available</th>
+          <th>Borrowed</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let book of books">
+        @for (book of books(); track book.id) {
+        <tr>
 
-            <td>
-              <div class="fw-semibold">{{ book.title }}</div>
-              <small class="text-muted">{{ book.author }}</small>
-            </td>
+          <td>
+            <div class="fw-semibold">{{ book.title }}</div>
+            <small class="text-muted">{{ book.author }}</small>
+          </td>
 
-            <td>{{ book.isbn }}</td>
+          <td>{{ book.isbn }}</td>
 
-            <td>
-              <span class="badge text-bg-light">
-                {{ book.genreDisplayName || book.genre }}
-              </span>
-            </td>
+          <td>
+                  <span class="badge text-bg-light">
+                    {{ book.genreDisplayName || book.genre }}
+                  </span>
+          </td>
 
-            <td>{{ book.totalCopies }}</td>
+          <td>{{ book.totalCopies }}</td>
 
-            <td>
-              <span class="fw-semibold">
-                {{ book.availableCopies }}
-              </span>
-            </td>
+          <td>
+                  <span class="fw-semibold">
+                    {{ book.availableCopies }}
+                  </span>
+          </td>
 
-            <td>{{ getBorrowedCopies(book) }}</td>
+          <td>{{ getBorrowedCopies(book) }}</td>
 
-            <td>
-              <span class="badge" [ngClass]="getAvailabilityClass(book)">
-                {{ getAvailabilityText(book) }}
-              </span>
-            </td>
+          <td>
+                  <span class="badge" [ngClass]="getAvailabilityClass(book)">
+                    {{ getAvailabilityText(book) }}
+                  </span>
+          </td>
 
-            <td class="text-end">
-              <button
-                class="btn btn-sm btn-outline-primary"
-                (click)="manageInventory(book)">
-                Manage
-              </button>
-            </td>
+          <td class="text-end">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              (click)="manageInventory(book)">
+              Manage
+            </button>
+          </td>
 
-          </tr>
+        </tr>
+        }
         </tbody>
       </table>
     </div>
+    }
 
-    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
-      <span class="text-muted">
-        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
-      </span>
+    @if (!isLoading() && totalPages() > 0) {
+    <div class="pagination-bar">
+        <span class="text-muted">
+          Page {{ page() + 1 }} of {{ totalPages() }} · Total {{ totalElements() }}
+        </span>
 
       <div>
         <button
           class="btn btn-sm btn-outline-secondary me-2"
-          [disabled]="page === 0"
+          [disabled]="page() === 0"
           (click)="previousPage()">
           Previous
         </button>
 
         <button
           class="btn btn-sm btn-outline-secondary"
-          [disabled]="page + 1 >= totalPages"
+          [disabled]="page() + 1 >= totalPages()"
           (click)="nextPage()">
           Next
         </button>
       </div>
     </div>
+    }
 
   </div>
 

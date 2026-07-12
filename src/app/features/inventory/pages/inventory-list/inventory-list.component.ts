@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { BookApiService } from '../../../books/services/book-api.service';
 import { Book } from '../../../books/models/book.model';
@@ -18,83 +25,84 @@ import { PERMISSIONS } from '../../../../core/constants/permissions';
     RouterLink
   ],
   templateUrl: './inventory-list.component.html',
-  styleUrl: './inventory-list.component.scss'
+  styleUrl: './inventory-list.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InventoryListComponent implements OnInit {
 
   private readonly bookApiService = inject(BookApiService);
   private readonly router = inject(Router);
+  private readonly permissionService = inject(PermissionService);
 
-  public readonly permissionService = inject(PermissionService);
-  public readonly permissions = PERMISSIONS;
+  readonly permissions = PERMISSIONS;
 
-  books: Book[] = [];
+  readonly books = signal<Book[]>([]);
 
-  keyword = '';
-  isLoading = false;
+  readonly keyword = signal('');
+  readonly isLoading = signal(false);
 
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
   ngOnInit(): void {
     this.loadBooks();
   }
 
   loadBooks(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.bookApiService.getBooks(this.page, this.size)
+    this.bookApiService.getBooks(this.page(), this.size())
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.books = response?.content ?? [];
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? this.books.length;
-          this.isLoading = false;
+          this.books.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? this.books().length);
         },
         error: () => {
-          this.books = [];
-          this.totalPages = 0;
-          this.totalElements = 0;
-          this.isLoading = false;
+          this.resetData();
         }
       });
   }
 
-  searchBooks(): void {
-    this.page = 0;
+  searchBooks(resetPage = true): void {
+    if (resetPage) {
+      this.page.set(0);
+    }
 
-    const searchText = this.keyword.trim();
+    const searchText = this.keyword().trim();
 
     if (!searchText) {
       this.loadBooks();
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.bookApiService.searchBooks(searchText, this.page, this.size)
+    this.bookApiService.searchBooks(searchText, this.page(), this.size())
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.books = response?.content ?? [];
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? this.books.length;
-          this.isLoading = false;
+          this.books.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? this.books().length);
         },
         error: () => {
-          this.books = [];
-          this.totalPages = 0;
-          this.totalElements = 0;
-          this.isLoading = false;
+          this.resetData();
         }
       });
   }
 
   clearSearch(): void {
-    this.keyword = '';
-    this.page = 0;
+    this.keyword.set('');
+    this.page.set(0);
     this.loadBooks();
+  }
+
+  onKeywordChange(value: string): void {
+    this.keyword.set(value);
   }
 
   manageInventory(book: Book): void {
@@ -102,27 +110,32 @@ export class InventoryListComponent implements OnInit {
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
-
-      if (this.keyword.trim()) {
-        this.searchBooks();
-      } else {
-        this.loadBooks();
-      }
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
+      this.loadCurrentPage();
     }
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
-
-      if (this.keyword.trim()) {
-        this.searchBooks();
-      } else {
-        this.loadBooks();
-      }
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
+      this.loadCurrentPage();
     }
+  }
+
+  private loadCurrentPage(): void {
+    if (this.keyword().trim()) {
+      this.searchBooks(false);
+      return;
+    }
+
+    this.loadBooks();
+  }
+
+  private resetData(): void {
+    this.books.set([]);
+    this.totalPages.set(0);
+    this.totalElements.set(0);
   }
 
   canManageInventory(): boolean {
@@ -130,7 +143,10 @@ export class InventoryListComponent implements OnInit {
   }
 
   getBorrowedCopies(book: Book): number {
-    return Math.max((book.totalCopies ?? 0) - (book.availableCopies ?? 0), 0);
+    return Math.max(
+      (book.totalCopies ?? 0) - (book.availableCopies ?? 0),
+      0
+    );
   }
 
   getAvailabilityClass(book: Book): string {

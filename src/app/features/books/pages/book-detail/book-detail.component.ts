@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { BookApiService } from '../../services/book-api.service';
 import { Book } from '../../models/book.model';
@@ -15,56 +23,70 @@ import { PERMISSIONS } from '../../../../core/constants/permissions';
     RouterLink
   ],
   templateUrl: './book-detail.component.html',
-  styleUrl: './book-detail.component.scss'
+  styleUrl: './book-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BookDetailComponent implements OnInit {
 
-  book?: Book;
-  isLoading = false;
-  permissions = PERMISSIONS;
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly bookApiService = inject(BookApiService);
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private bookApiService: BookApiService,
-    public permissionService: PermissionService
-  ) {}
+  public readonly permissionService = inject(PermissionService);
+  public readonly permissions = PERMISSIONS;
+
+  readonly bookId = signal<number | null>(null);
+  readonly book = signal<Book | null>(null);
+  readonly isLoading = signal(false);
+
+  readonly canBorrowBook = computed(() => {
+    const book = this.book();
+
+    return !!book &&
+      this.permissionService.hasPermission(this.permissions.BORROW_WRITE) &&
+      (book.availableCopies ?? 0) > 0 &&
+      book.available;
+  });
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loadBook(id);
+
+    this.bookId.set(id);
+    this.loadBook();
   }
 
-  loadBook(id: number): void {
-    this.isLoading = true;
+  loadBook(): void {
+    const id = this.bookId();
+
+    if (!id) {
+      this.book.set(null);
+      return;
+    }
+
+    this.isLoading.set(true);
 
     this.bookApiService.getBookById(id)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.book = response;
-          this.isLoading = false;
+          this.book.set(response);
         },
         error: () => {
-          this.isLoading = false;
+          this.book.set(null);
         }
       });
   }
 
-  canBorrowBook(): boolean {
-    return !!this.book &&
-      this.permissionService.hasPermission(this.permissions.BORROW_WRITE) &&
-      (this.book.availableCopies ?? 0) > 0 &&
-      this.book.available;
-  }
-
   borrowThisBook(): void {
-    if (!this.book || !this.canBorrowBook()) {
+    const book = this.book();
+
+    if (!book || !this.canBorrowBook()) {
       return;
     }
 
     this.router.navigate(['/app/borrow-records/create'], {
       queryParams: {
-        bookId: this.book.id
+        bookId: book.id
       }
     });
   }

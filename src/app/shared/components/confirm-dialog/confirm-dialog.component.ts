@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 
 import {
@@ -15,45 +23,20 @@ import {
     CommonModule
   ],
   templateUrl: './confirm-dialog.component.html',
-  styleUrl: './confirm-dialog.component.scss'
+  styleUrl: './confirm-dialog.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfirmDialogComponent implements OnInit, OnDestroy {
 
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private subscription?: Subscription;
 
-  isVisible = false;
-  request?: ConfirmDialogRequest;
+  readonly isVisible = signal(false);
+  readonly request = signal<ConfirmDialogRequest | null>(null);
 
-  ngOnInit(): void {
-    this.subscription = this.confirmDialogService.confirmRequest$
-      .subscribe(request => {
-        this.request = request;
-        this.isVisible = true;
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.subscription?.unsubscribe();
-  }
-
-  confirm(): void {
-    this.request?.resolve(true);
-    this.close();
-  }
-
-  cancel(): void {
-    this.request?.resolve(false);
-    this.close();
-  }
-
-  close(): void {
-    this.isVisible = false;
-    this.request = undefined;
-  }
-
-  get confirmButtonClass(): string {
-    const variant: ConfirmDialogVariant = this.request?.variant ?? 'primary';
+  readonly confirmButtonClass = computed(() => {
+    const variant: ConfirmDialogVariant =
+      this.request()?.variant ?? 'primary';
 
     switch (variant) {
       case 'success':
@@ -68,10 +51,11 @@ export class ConfirmDialogComponent implements OnInit, OnDestroy {
       default:
         return 'btn-primary';
     }
-  }
+  });
 
-  get iconClass(): string {
-    const variant: ConfirmDialogVariant = this.request?.variant ?? 'primary';
+  readonly iconClass = computed(() => {
+    const variant: ConfirmDialogVariant =
+      this.request()?.variant ?? 'primary';
 
     switch (variant) {
       case 'success':
@@ -86,10 +70,11 @@ export class ConfirmDialogComponent implements OnInit, OnDestroy {
       default:
         return 'bi bi-question-circle';
     }
-  }
+  });
 
-  get iconWrapperClass(): string {
-    const variant: ConfirmDialogVariant = this.request?.variant ?? 'primary';
+  readonly iconWrapperClass = computed(() => {
+    const variant: ConfirmDialogVariant =
+      this.request()?.variant ?? 'primary';
 
     switch (variant) {
       case 'success':
@@ -104,5 +89,32 @@ export class ConfirmDialogComponent implements OnInit, OnDestroy {
       default:
         return 'icon-primary';
     }
+  });
+
+  ngOnInit(): void {
+    this.subscription = this.confirmDialogService.confirmRequest$
+      .subscribe(request => {
+        this.request.set(request);
+        this.isVisible.set(true);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.subscription?.unsubscribe();
+  }
+
+  confirm(): void {
+    this.request()?.resolve(true);
+    this.close();
+  }
+
+  cancel(): void {
+    this.request()?.resolve(false);
+    this.close();
+  }
+
+  close(): void {
+    this.isVisible.set(false);
+    this.request.set(null);
   }
 }

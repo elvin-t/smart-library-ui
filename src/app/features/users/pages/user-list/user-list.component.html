@@ -8,14 +8,15 @@
       </p>
     </div>
 
+    @if (canCreate()) {
     <a
-      *ngIf="canCreate()"
       routerLink="/app/users/create"
       class="btn btn-primary">
 
       <i class="bi bi-plus-circle me-1"></i>
       Create User
     </a>
+    }
   </div>
 
   <div class="filter-card mt-3">
@@ -27,7 +28,8 @@
         <input
           type="text"
           class="form-control"
-          [(ngModel)]="keyword"
+          [ngModel]="keyword()"
+          (ngModelChange)="onKeywordChange($event)"
           placeholder="Search by name, email, or phone"
           (keyup.enter)="searchUsers()"
         />
@@ -38,14 +40,16 @@
 
         <select
           class="form-select"
-          [(ngModel)]="selectedStatus"
-          (change)="applyStatusFilter()">
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="onStatusChange($event)">
 
           <option value="">All Status</option>
 
-          <option *ngFor="let status of membershipStatuses" [value]="status.value">
+          @for (status of membershipStatuses; track status.value) {
+          <option [value]="status.value">
             {{ status.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -69,117 +73,130 @@
 
   <div class="table-card mt-3">
 
-    <div *ngIf="isLoading" class="text-center py-5">
+    @if (isLoading()) {
+    <div class="text-center py-5">
       <div class="spinner-border text-primary"></div>
       <p class="text-muted mt-2">Loading users...</p>
     </div>
+    }
 
-    <div *ngIf="!isLoading && users.length === 0" class="empty-state">
+    @if (!isLoading() && users().length === 0) {
+    <div class="empty-state">
       <i class="bi bi-people"></i>
       <h5>No users found</h5>
       <p class="text-muted">
         No user records available for the selected search/filter.
       </p>
     </div>
+    }
 
-    <div class="table-responsive" *ngIf="!isLoading && users.length > 0">
+    @if (!isLoading() && users().length > 0) {
+    <div class="table-responsive">
       <table class="table align-middle">
         <thead>
-          <tr>
-            <th>User</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Membership Type</th>
-            <th>Membership Status</th>
-            <th>Login Status</th>
-            <th>Created At</th>
-            <th class="text-end">Actions</th>
-          </tr>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Membership Type</th>
+          <th>Membership Status</th>
+          <th>Login Status</th>
+          <th>Created At</th>
+          <th class="text-end">Actions</th>
+        </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let user of users">
-            <td>
-              <div class="fw-semibold">
-                {{ user.fullName || '-' }}
-              </div>
-              <small class="text-muted">ID: {{ user.id }}</small>
-            </td>
+        @for (user of users(); track user.id) {
+        <tr>
+          <td>
+            <div class="fw-semibold">
+              {{ user.fullName || '-' }}
+            </div>
+            <small class="text-muted">ID: {{ user.id }}</small>
+          </td>
 
-            <td>{{ user.email || '-' }}</td>
-            <td>{{ user.phone || '-' }}</td>
-            <td>{{ user.membershipType || '-' }}</td>
+          <td>{{ user.email || '-' }}</td>
+          <td>{{ user.phone || '-' }}</td>
+          <td>{{ user.membershipType || '-' }}</td>
 
-            <td>
-              <span class="badge" [ngClass]="getStatusClass(user.membershipStatus)">
-                {{ user.membershipStatus || '-' }}
-              </span>
-            </td>
+          <td>
+                  <span class="badge" [ngClass]="getStatusClass(user.membershipStatus)">
+                    {{ user.membershipStatus || '-' }}
+                  </span>
+          </td>
 
-            <td>
-              <span class="badge" [ngClass]="getLoginStatusClass(user)">
-                {{ getLoginStatusText(user) }}
-              </span>
-            </td>
+          <td>
+                  <span class="badge" [ngClass]="getLoginStatusClass(user)">
+                    {{ getLoginStatusText(user) }}
+                  </span>
+          </td>
 
-            <td>
-              {{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}
-            </td>
+          <td>
+            {{ user.createdAt ? (user.createdAt | date:'medium') : '-' }}
+          </td>
 
-            <td class="text-end">
-              <button
-                class="btn btn-sm btn-outline-primary me-1"
-                (click)="viewUser(user)">
-                View
-              </button>
+          <td class="text-end">
+            <button
+              class="btn btn-sm btn-outline-primary me-1"
+              (click)="viewUser(user)">
+              View
+            </button>
 
-              <button
-                *ngIf="canEdit()"
-                class="btn btn-sm btn-outline-secondary me-1"
-                (click)="editUser(user)">
-                Edit
-              </button>
+            @if (canEdit()) {
+            <button
+              class="btn btn-sm btn-outline-secondary me-1"
+              (click)="editUser(user)">
+              Edit
+            </button>
+            }
 
-              <button
-                *ngIf="showActivateButton(user)"
-                class="btn btn-sm btn-outline-success me-1"
-                (click)="activateUser(user)">
-                Activate
-              </button>
+            @if (showActivateButton(user)) {
+            <button
+              class="btn btn-sm btn-outline-success me-1"
+              (click)="activateUser(user)">
+              Activate
+            </button>
+            }
 
-              <button
-                *ngIf="showDeactivateButton(user)"
-                class="btn btn-sm btn-outline-danger"
-                (click)="deactivateUser(user)">
-                Deactivate
-              </button>
-            </td>
-          </tr>
+            @if (showDeactivateButton(user)) {
+            <button
+              class="btn btn-sm btn-outline-danger"
+              (click)="deactivateUser(user)">
+              Deactivate
+            </button>
+            }
+          </td>
+        </tr>
+        }
         </tbody>
       </table>
     </div>
+    }
 
-    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
-      <span class="text-muted">
-        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
-      </span>
+    @if (!isLoading() && totalPages() > 0) {
+    <div class="pagination-bar">
+        <span class="text-muted">
+          Page {{ page() + 1 }} of {{ totalPages() }} · Total {{ totalElements() }}
+        </span>
 
       <div>
         <button
           class="btn btn-sm btn-outline-secondary me-2"
-          [disabled]="page === 0"
+          [disabled]="page() === 0"
           (click)="previousPage()">
           Previous
         </button>
 
         <button
           class="btn btn-sm btn-outline-secondary"
-          [disabled]="page + 1 >= totalPages"
+          [disabled]="page() + 1 >= totalPages()"
           (click)="nextPage()">
           Next
         </button>
       </div>
     </div>
+    }
 
   </div>
 

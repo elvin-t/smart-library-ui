@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { FineApiService } from '../../services/fine-api.service';
@@ -18,7 +26,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './fine-detail.component.html',
-  styleUrl: './fine-detail.component.scss'
+  styleUrl: './fine-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FineDetailComponent implements OnInit {
 
@@ -30,76 +39,87 @@ export class FineDetailComponent implements OnInit {
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
 
-  borrowRecordId!: number;
-  fine?: Fine;
+  readonly borrowRecordId = signal<number | null>(null);
+  readonly fine = signal<Fine | null>(null);
 
-  isLoading = false;
-  isSaving = false;
+  readonly isLoading = signal(false);
+  readonly isSaving = signal(false);
+
+  readonly canPayFine = computed(() => {
+    const fine = this.fine();
+
+    return !!fine &&
+      fine.fineAmount > 0 &&
+      !fine.finePaid &&
+      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+  });
 
   ngOnInit(): void {
-    this.borrowRecordId = Number(this.route.snapshot.paramMap.get('borrowRecordId'));
+    const id = Number(this.route.snapshot.paramMap.get('borrowRecordId'));
+
+    this.borrowRecordId.set(id);
+
     this.loadFineDetails();
   }
 
   loadFineDetails(): void {
-    this.isLoading = true;
+    const borrowRecordId = this.borrowRecordId();
 
-    this.fineApiService.getFineDetails(this.borrowRecordId)
+    if (!borrowRecordId) {
+      this.fine.set(null);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.fineApiService.getFineDetails(borrowRecordId)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.fine = response;
-          this.isLoading = false;
+          this.fine.set(response);
         },
         error: () => {
-          this.isLoading = false;
+          this.fine.set(null);
         }
       });
   }
 
   async markFineAsPaid(): Promise<void> {
-  if (!this.fine) {
-    return;
-  }
+    const fine = this.fine();
 
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Mark Fine as Paid',
-    message: `Mark fine as paid for borrow record #${this.fine.borrowRecordId}?`,
-    confirmText: 'Mark Paid',
-    cancelText: 'Cancel',
-    variant: 'success'
-  });
+    if (!fine) {
+      return;
+    }
 
-  if (!confirmed) {
-    return;
-  }
-
-  this.isSaving = true;
-
-  this.fineApiService.markFineAsPaid(this.fine.borrowRecordId)
-    .subscribe({
-      next: response => {
-        this.fine = response;
-        this.toastr.success('Fine marked as paid');
-        this.isSaving = false;
-      },
-      error: () => {
-        this.isSaving = false;
-      }
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Mark Fine as Paid',
+      message: `Mark fine as paid for borrow record #${fine.borrowRecordId}?`,
+      confirmText: 'Mark Paid',
+      cancelText: 'Cancel',
+      variant: 'success'
     });
-}
 
-  canPayFine(): boolean {
-    return !!this.fine &&
-      this.fine.fineAmount > 0 &&
-      !this.fine.finePaid &&
-      this.permissionService.hasPermission(this.permissions.RETURN_WRITE);
+    if (!confirmed) {
+      return;
+    }
+
+    this.isSaving.set(true);
+
+    this.fineApiService.markFineAsPaid(fine.borrowRecordId)
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: response => {
+          this.fine.set(response);
+          this.toastr.success('Fine marked as paid');
+        }
+      });
   }
 
   getPaymentStatusClass(): string {
-    return this.fine?.finePaid ? 'text-bg-success' : 'text-bg-danger';
+    return this.fine()?.finePaid ? 'text-bg-success' : 'text-bg-danger';
   }
 
   getPaymentStatusText(): string {
-    return this.fine?.finePaid ? 'Paid' : 'Pending';
+    return this.fine()?.finePaid ? 'Paid' : 'Pending';
   }
 }

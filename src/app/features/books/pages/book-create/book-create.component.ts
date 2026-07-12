@@ -1,7 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { BookApiService } from '../../services/book-api.service';
@@ -17,23 +23,20 @@ import { CreateBookRequest } from '../../models/create-book-request.model';
     RouterLink
   ],
   templateUrl: './book-create.component.html',
-  styleUrl: './book-create.component.scss'
+  styleUrl: './book-create.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BookCreateComponent implements OnInit{
+export class BookCreateComponent {
 
-  bookForm!: FormGroup;
-    constructor(
-    private formBuilder: FormBuilder,
-    private bookApiService: BookApiService,
-    private router: Router,
-    private toastr: ToastrService
-  ) {}
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly bookApiService = inject(BookApiService);
+  private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
-  genres = BOOK_GENRES;
-  isSaving = false;
+  readonly genres = BOOK_GENRES;
+  readonly isSaving = signal(false);
 
-  ngOnInit(): void {
-    this.bookForm = this.formBuilder.group({
+  readonly bookForm = this.formBuilder.group({
     isbn: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(20)]],
     title: ['', [Validators.required, Validators.maxLength(200)]],
     author: ['', [Validators.required, Validators.maxLength(100)]],
@@ -43,12 +46,9 @@ export class BookCreateComponent implements OnInit{
     availableCopies: [1, [Validators.required, Validators.min(0)]],
     publicationDate: ['']
   });
-  }
-
-
 
   save(): void {
-    if (this.bookForm.invalid) {
+    if (this.bookForm.invalid || this.isSaving()) {
       this.bookForm.markAllAsTouched();
       return;
     }
@@ -66,16 +66,14 @@ export class BookCreateComponent implements OnInit{
       publicationDate: value.publicationDate || undefined
     };
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
     this.bookApiService.createBook(request)
+      .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: response => {
           this.toastr.success('Book created successfully');
           this.router.navigate(['/app/books', response.id]);
-        },
-        error: () => {
-          this.isSaving = false;
         }
       });
   }

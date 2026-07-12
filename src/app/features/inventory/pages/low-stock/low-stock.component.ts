@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Inventory } from '../../models/inventory.model';
@@ -14,47 +21,64 @@ import { Inventory } from '../../models/inventory.model';
     FormsModule
   ],
   templateUrl: './low-stock.component.html',
-  styleUrl: './low-stock.component.scss'
+  styleUrl: './low-stock.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LowStockComponent implements OnInit {
 
   private readonly inventoryApiService = inject(InventoryApiService);
   private readonly router = inject(Router);
 
-  inventories: Inventory[] = [];
+  readonly inventories = signal<Inventory[]>([]);
 
-  threshold = 2;
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly threshold = signal(2);
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
-  isLoading = false;
+  readonly isLoading = signal(false);
 
   ngOnInit(): void {
     this.loadLowStock();
   }
 
   loadLowStock(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.inventoryApiService.getLowStockBooks(this.threshold, this.page, this.size)
+    this.inventoryApiService.getLowStockBooks(
+      this.threshold(),
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.inventories = response.content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
-          this.isLoading = false;
+          this.inventories.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
         },
         error: () => {
-          this.isLoading = false;
+          this.inventories.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
         }
       });
   }
 
   applyThreshold(): void {
-    this.page = 0;
+    this.page.set(0);
     this.loadLowStock();
+  }
+
+  onThresholdChange(value: number | string): void {
+    const thresholdValue = Number(value);
+
+    this.threshold.set(
+      Number.isNaN(thresholdValue) || thresholdValue < 0
+        ? 0
+        : thresholdValue
+    );
   }
 
   viewInventory(bookId: number): void {
@@ -62,15 +86,15 @@ export class LowStockComponent implements OnInit {
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
       this.loadLowStock();
     }
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
       this.loadLowStock();
     }
   }

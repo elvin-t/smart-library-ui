@@ -13,107 +13,113 @@
     </a>
   </div>
 
-  <div *ngIf="isLoading" class="text-center py-5">
+  @if (isLoading()) {
+  <div class="text-center py-5">
     <div class="spinner-border text-primary"></div>
     <p class="text-muted mt-2">Loading inventory...</p>
   </div>
+  }
 
-  <ng-container *ngIf="!isLoading && inventory">
+  @if (!isLoading() && inventory(); as inventory) {
 
-    <div class="inventory-summary mt-3">
-      <div>
-        <h4>{{ inventory.title }}</h4>
-        <p class="text-muted mb-0">by {{ inventory.author }}</p>
-      </div>
+  <div class="inventory-summary mt-3">
+    <div>
+      <h4>{{ inventory.title }}</h4>
+      <p class="text-muted mb-0">by {{ inventory.author }}</p>
+    </div>
 
-      <span class="badge" [ngClass]="getAvailabilityClass()">
+    <span class="badge" [ngClass]="getAvailabilityClass()">
         {{ getAvailabilityText() }}
       </span>
-    </div>
+  </div>
 
-    <div class="row g-3 mt-2">
-      <div class="col-md-3">
-        <div class="metric-card">
-          <span>Total Copies</span>
-          <h3>{{ inventory.totalCopies }}</h3>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="metric-card success">
-          <span>Available Copies</span>
-          <h3>{{ inventory.availableCopies }}</h3>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="metric-card warning">
-          <span>Borrowed Copies</span>
-          <h3>{{ inventory.borrowedCopies }}</h3>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="metric-card info">
-          <span>ISBN</span>
-          <h6>{{ inventory.isbn }}</h6>
-        </div>
+  <div class="row g-3 mt-2">
+    <div class="col-md-3">
+      <div class="metric-card">
+        <span>Total Copies</span>
+        <h3>{{ inventory.totalCopies }}</h3>
       </div>
     </div>
 
-    <div class="row g-3 mt-3" *ngIf="canWriteInventory()">
-
-      <div class="col-md-4">
-        <div class="action-card">
-          <h5>Add Copies</h5>
-          <p class="text-muted">Increase total and available copies.</p>
-
-          <form [formGroup]="addCopiesForm" (ngSubmit)="addCopies()">
-            <input type="number" class="form-control mb-3" formControlName="copies" />
-
-            <button class="btn btn-success w-100" [disabled]="isSaving">
-              Add Copies
-            </button>
-          </form>
-        </div>
+    <div class="col-md-3">
+      <div class="metric-card success">
+        <span>Available Copies</span>
+        <h3>{{ inventory.availableCopies }}</h3>
       </div>
-
-      <div class="col-md-4">
-        <div class="action-card">
-          <h5>Remove Copies</h5>
-          <p class="text-muted">Reduce total copies safely.</p>
-
-          <form [formGroup]="removeCopiesForm" (ngSubmit)="removeCopies()">
-            <input type="number" class="form-control mb-3" formControlName="copies" />
-
-            <button class="btn btn-danger w-100" [disabled]="isSaving">
-              Remove Copies
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="action-card">
-          <h5>Adjust Available Copies</h5>
-          <p class="text-muted">Manually update available copies.</p>
-
-          <form [formGroup]="adjustAvailableForm" (ngSubmit)="adjustAvailableCopies()">
-            <input type="number" class="form-control mb-3" formControlName="availableCopies" />
-
-            <button class="btn btn-primary w-100" [disabled]="isSaving">
-              Update Available
-            </button>
-          </form>
-        </div>
-      </div>
-
     </div>
 
-    <div class="alert alert-info mt-3" *ngIf="!canWriteInventory()">
-      You have read-only access to inventory.
+    <div class="col-md-3">
+      <div class="metric-card warning">
+        <span>Borrowed Copies</span>
+        <h3>{{ inventory.borrowedCopies }}</h3>
+      </div>
     </div>
 
-  </ng-container>
+    <div class="col-md-3">
+      <div class="metric-card info">
+        <span>ISBN</span>
+        <h6>{{ inventory.isbn }}</h6>
+      </div>
+    </div>
+  </div>
+
+  @if (canWriteInventory()) {
+  <div class="row g-3 mt-3">
+
+    <div class="col-md-4">
+      <div class="action-card">
+        <h5>Add Copies</h5>
+        <p class="text-muted">Increase total and available copies.</p>
+
+        <form [formGroup]="addCopiesForm" (ngSubmit)="addCopies()">
+          <input type="number" class="form-control mb-3" formControlName="copies" />
+
+          <button class="btn btn-success w-100" [disabled]="isSaving()">
+            Add Copies
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="action-card">
+        <h5>Remove Copies</h5>
+        <p class="text-muted">Reduce total copies safely.</p>
+
+        <form [formGroup]="removeCopiesForm" (ngSubmit)="removeCopies()">
+          <input type="number" class="form-control mb-3" formControlName="copies" />
+
+          <button class="btn btn-danger w-100" [disabled]="isSaving()">
+            Remove Copies
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="action-card">
+        <h5>Adjust Available Copies</h5>
+        <p class="text-muted">Manually update available copies.</p>
+
+        <form [formGroup]="adjustAvailableForm" (ngSubmit)="adjustAvailableCopies()">
+          <input type="number" class="form-control mb-3" formControlName="availableCopies" />
+
+          <button class="btn btn-primary w-100" [disabled]="isSaving()">
+            Update Available
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+  }
+
+  @if (!canWriteInventory()) {
+  <div class="alert alert-info mt-3">
+    You have read-only access to inventory.
+  </div>
+  }
+
+  }
 
 </div>

@@ -16,12 +16,14 @@
 
         <select
           class="form-select"
-          [(ngModel)]="selectedFineStatus"
-          (change)="applyFilter()">
+          [ngModel]="selectedFineStatus()"
+          (ngModelChange)="onFineStatusChange($event)">
 
-          <option *ngFor="let status of fineStatuses" [value]="status.value">
+          @for (status of fineStatuses; track status.value) {
+          <option [value]="status.value">
             {{ status.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -35,93 +37,106 @@
 
   <div class="table-card mt-3">
 
-    <div *ngIf="isLoading" class="text-center py-5">
+    @if (isLoading()) {
+    <div class="text-center py-5">
       <div class="spinner-border text-primary"></div>
       <p class="text-muted mt-2">Loading fine records...</p>
     </div>
+    }
 
-    <div *ngIf="!isLoading && fineRecords.length === 0" class="empty-state">
+    @if (!isLoading() && fineRecords().length === 0) {
+    <div class="empty-state">
       <i class="bi bi-cash-coin"></i>
       <h5>No fine records found</h5>
       <p class="text-muted">There are no fines for the selected filter.</p>
     </div>
+    }
 
-    <div class="table-responsive" *ngIf="!isLoading && fineRecords.length > 0">
+    @if (!isLoading() && fineRecords().length > 0) {
+    <div class="table-responsive">
       <table class="table align-middle">
         <thead>
-          <tr>
-            <th>Borrow ID</th>
-            <th>User ID</th>
-            <th>Book ID</th>
-            <th>Overdue Days</th>
-            <th>Fine Amount</th>
-            <th>Status</th>
-            <th>Paid At</th>
-            <th class="text-end">Actions</th>
-          </tr>
+        <tr>
+          <th>Borrow ID</th>
+          <th>User ID</th>
+          <th>Book ID</th>
+          <th>Overdue Days</th>
+          <th>Fine Amount</th>
+          <th>Status</th>
+          <th>Paid At</th>
+          <th class="text-end">Actions</th>
+        </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let record of fineRecords">
-            <td>#{{ record.id }}</td>
-            <td>{{ record.userId }}</td>
-            <td>{{ record.bookId }}</td>
-            <td>{{ record.overdueDays || 0 }}</td>
+        @for (record of fineRecords(); track record.id) {
+        <tr>
+          <td>#{{ record.id }}</td>
+          <td>{{ record.userId }}</td>
+          <td>{{ record.bookId }}</td>
+          <td>{{ record.overdueDays || 0 }}</td>
 
-            <td>
-              <span [ngClass]="getFineClass(record)">
-                {{ record.fineAmount || 0 | currency:'INR' }}
-              </span>
-            </td>
+          <td>
+                  <span [ngClass]="getFineClass(record)">
+                    {{ (record.fineAmount || 0) | currency:'INR' }}
+                  </span>
+          </td>
 
-            <td>
-              <span class="badge" [ngClass]="getPaymentStatusClass(record)">
-                {{ getPaymentStatusText(record) }}
-              </span>
-            </td>
+          <td>
+                  <span class="badge" [ngClass]="getPaymentStatusClass(record)">
+                    {{ getPaymentStatusText(record) }}
+                  </span>
+          </td>
 
-            <td>
-              {{ record.finePaidAt ? (record.finePaidAt | date:'medium') : '-' }}
-            </td>
+          <td>
+            {{ record.finePaidAt ? (record.finePaidAt | date:'medium') : '-' }}
+          </td>
 
-            <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewFine(record)">
-                View
-              </button>
+          <td class="text-end">
+            <button
+              class="btn btn-sm btn-outline-primary me-1"
+              (click)="viewFine(record)">
+              View
+            </button>
 
-              <button
-                *ngIf="canPayFine(record)"
-                class="btn btn-sm btn-outline-success"
-                (click)="markFineAsPaid(record)">
-                Mark Paid
-              </button>
-            </td>
-          </tr>
+            @if (canPayFine(record)) {
+            <button
+              class="btn btn-sm btn-outline-success"
+              (click)="markFineAsPaid(record)">
+              Mark Paid
+            </button>
+            }
+          </td>
+        </tr>
+        }
         </tbody>
       </table>
     </div>
+    }
 
-    <div class="pagination-bar" *ngIf="!isLoading && totalPages > 0">
-      <span class="text-muted">
-        Page {{ page + 1 }} of {{ totalPages }} · Total {{ totalElements }}
-      </span>
+    @if (!isLoading() && totalPages() > 0) {
+    <div class="pagination-bar">
+        <span class="text-muted">
+          Page {{ page() + 1 }} of {{ totalPages() }} · Total {{ totalElements() }}
+        </span>
 
       <div>
         <button
           class="btn btn-sm btn-outline-secondary me-2"
-          [disabled]="page === 0"
+          [disabled]="page() === 0"
           (click)="previousPage()">
           Previous
         </button>
 
         <button
           class="btn btn-sm btn-outline-secondary"
-          [disabled]="page + 1 >= totalPages"
+          [disabled]="page() + 1 >= totalPages()"
           (click)="nextPage()">
           Next
         </button>
       </div>
     </div>
+    }
 
   </div>
 

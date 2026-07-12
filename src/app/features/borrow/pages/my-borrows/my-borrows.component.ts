@@ -1,6 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { BorrowApiService } from '../../services/borrow-api.service';
@@ -20,7 +27,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './my-borrows.component.html',
-  styleUrl: './my-borrows.component.scss'
+  styleUrl: './my-borrows.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MyBorrowsComponent implements OnInit {
 
@@ -33,13 +41,13 @@ export class MyBorrowsComponent implements OnInit {
   public readonly permissionService = inject(PermissionService);
   public readonly permissions = PERMISSIONS;
 
-  borrowRecords: BorrowRecord[] = [];
+  readonly borrowRecords = signal<BorrowRecord[]>([]);
 
-  isLoading = false;
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly isLoading = signal(false);
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
   ngOnInit(): void {
     this.loadMyBorrows();
@@ -53,21 +61,24 @@ export class MyBorrowsComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.borrowApiService.getBorrowRecordsByUser(userId, this.page, this.size)
+    this.borrowApiService.getBorrowRecordsByUser(
+      userId,
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.borrowRecords = response?.content ?? [];
-          this.totalPages = response?.totalPages ?? 0;
-          this.totalElements = response?.totalElements ?? this.borrowRecords.length;
-          this.isLoading = false;
+          this.borrowRecords.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? this.borrowRecords().length);
         },
         error: () => {
-          this.borrowRecords = [];
-          this.totalPages = 0;
-          this.totalElements = 0;
-          this.isLoading = false;
+          this.borrowRecords.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
         }
       });
   }
@@ -77,26 +88,26 @@ export class MyBorrowsComponent implements OnInit {
   }
 
   async returnBook(record: BorrowRecord): Promise<void> {
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Return Book',
-    message: `Are you sure you want to return borrow record #${record.id}?`,
-    confirmText: 'Return',
-    cancelText: 'Cancel',
-    variant: 'success'
-  });
-
-  if (!confirmed) {
-    return;
-  }
-
-  this.borrowApiService.returnBook(record.id)
-    .subscribe({
-      next: () => {
-        this.toastr.success('Book returned successfully');
-        this.loadMyBorrows();
-      }
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Return Book',
+      message: `Are you sure you want to return borrow record #${record.id}?`,
+      confirmText: 'Return',
+      cancelText: 'Cancel',
+      variant: 'success'
     });
-}
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.borrowApiService.returnBook(record.id)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Book returned successfully');
+          this.loadMyBorrows();
+        }
+      });
+  }
 
   canReturn(record: BorrowRecord): boolean {
     return record.status === BorrowStatus.BORROWED &&
@@ -104,15 +115,15 @@ export class MyBorrowsComponent implements OnInit {
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
       this.loadMyBorrows();
     }
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
       this.loadMyBorrows();
     }
   }

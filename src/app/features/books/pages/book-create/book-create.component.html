@@ -23,9 +23,12 @@
         <label class="form-label">Genre</label>
         <select class="form-select" formControlName="genre">
           <option value="">Select genre</option>
-          <option *ngFor="let genre of genres" [value]="genre.value">
+
+          @for (genre of genres; track genre.value) {
+          <option [value]="genre.value">
             {{ genre.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -65,12 +68,17 @@
         Cancel
       </button>
 
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
-        <span *ngIf="!isSaving">Create Book</span>
-        <span *ngIf="isSaving">
-          <span class="spinner-border spinner-border-sm me-1"></span>
-          Saving...
-        </span>
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+        @if (!isSaving()) {
+        <span>Create Book</span>
+        }
+
+        @if (isSaving()) {
+        <span>
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            Saving...
+          </span>
+        }
       </button>
     </div>
   </form>

@@ -1,9 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { forkJoin, of } from 'rxjs';
+import { finalize, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { UserApiService } from '../../services/user-api.service';
@@ -30,7 +37,8 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     RouterLink
   ],
   templateUrl: './user-list.component.html',
-  styleUrl: './user-list.component.scss'
+  styleUrl: './user-list.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserListComponent implements OnInit {
 
@@ -39,33 +47,83 @@ export class UserListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly permissionService = inject(PermissionService);
 
-  public readonly permissionService = inject(PermissionService);
-  public readonly permissions = PERMISSIONS;
+  readonly permissions = PERMISSIONS;
+  readonly membershipStatuses = MEMBERSHIP_STATUSES;
 
-  users: User[] = [];
-  allUsers: User[] = [];
+  readonly allUsers = signal<User[]>([]);
+  readonly keyword = signal('');
+  readonly selectedStatus = signal('');
+  readonly isLoading = signal(false);
 
-  membershipStatuses = MEMBERSHIP_STATUSES;
+  readonly page = signal(0);
+  readonly size = signal(10);
 
-  keyword = '';
-  selectedStatus = '';
+  readonly filteredUsers = computed(() => {
+    let filteredUsers = [...this.allUsers()];
 
-  isLoading = false;
+    const searchText = this.keyword().trim().toLowerCase();
+    const status = this.selectedStatus();
 
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+    if (searchText) {
+      filteredUsers = filteredUsers.filter(user =>
+        (user.fullName ?? '').toLowerCase().includes(searchText) ||
+        (user.email ?? '').toLowerCase().includes(searchText) ||
+        (user.phone ?? '').toLowerCase().includes(searchText)
+      );
+    }
+
+    if (status) {
+      filteredUsers = filteredUsers.filter(user =>
+        user.membershipStatus === status
+      );
+    }
+
+    return filteredUsers;
+  });
+
+  readonly totalElements = computed(() =>
+    this.filteredUsers().length
+  );
+
+  readonly totalPages = computed(() =>
+    Math.ceil(this.totalElements() / this.size())
+  );
+
+  readonly users = computed(() => {
+    const totalPages = this.totalPages();
+
+    if (this.page() >= totalPages && totalPages > 0) {
+      this.page.set(totalPages - 1);
+    }
+
+    const startIndex = this.page() * this.size();
+    const endIndex = startIndex + this.size();
+
+    return this.filteredUsers().slice(startIndex, endIndex);
+  });
+
+  readonly canCreate = computed(() =>
+    this.permissionService.hasPermission(this.permissions.USER_WRITE)
+  );
+
+  readonly canEdit = computed(() =>
+    this.permissionService.hasPermission(this.permissions.USER_WRITE)
+  );
+
+  readonly canManageLogin = computed(() =>
+    this.permissionService.hasPermission(this.permissions.USER_WRITE)
+  );
 
   ngOnInit(): void {
     this.loadUsers();
   }
 
   loadUsers(): void {
-    this.isLoading = true;
-    this.users = [];
-    this.allUsers = [];
+    this.isLoading.set(true);
+    this.allUsers.set([]);
+    this.page.set(0);
 
     const users$ = this.userApiService.getUsers();
 
@@ -82,24 +140,23 @@ export class UserListComponent implements OnInit {
     forkJoin({
       users: users$,
       authStatuses: authStatuses$
-    }).subscribe({
-      next: ({ users, authStatuses }) => {
-        this.allUsers = this.mergeUsersWithAuthStatus(
-          users ?? [],
-          authStatuses ?? []
-        );
+    })
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: ({ users, authStatuses }) => {
+          const mergedUsers = this.mergeUsersWithAuthStatus(
+            users ?? [],
+            authStatuses ?? []
+          );
 
-        this.applyLocalFilterAndPagination();
-        this.isLoading = false;
-      },
-      error: () => {
-        this.users = [];
-        this.allUsers = [];
-        this.totalPages = 0;
-        this.totalElements = 0;
-        this.isLoading = false;
-      }
-    });
+          this.allUsers.set(mergedUsers);
+          this.page.set(0);
+        },
+        error: () => {
+          this.allUsers.set([]);
+          this.page.set(0);
+        }
+      });
   }
 
   private mergeUsersWithAuthStatus(
@@ -122,60 +179,35 @@ export class UserListComponent implements OnInit {
     });
   }
 
-  applyLocalFilterAndPagination(): void {
-    let filteredUsers = [...this.allUsers];
-
-    const searchText = this.keyword.trim().toLowerCase();
-
-    if (searchText) {
-      filteredUsers = filteredUsers.filter(user =>
-        (user.fullName ?? '').toLowerCase().includes(searchText) ||
-        (user.email ?? '').toLowerCase().includes(searchText) ||
-        (user.phone ?? '').toLowerCase().includes(searchText)
-      );
-    }
-
-    if (this.selectedStatus) {
-      filteredUsers = filteredUsers.filter(user =>
-        user.membershipStatus === this.selectedStatus
-      );
-    }
-
-    this.totalElements = filteredUsers.length;
-    this.totalPages = Math.ceil(this.totalElements / this.size);
-
-    if (this.page >= this.totalPages && this.totalPages > 0) {
-      this.page = this.totalPages - 1;
-    }
-
-    const startIndex = this.page * this.size;
-    const endIndex = startIndex + this.size;
-
-    this.users = filteredUsers.slice(startIndex, endIndex);
-  }
-
   searchUsers(): void {
-    this.page = 0;
-    this.applyLocalFilterAndPagination();
+    this.page.set(0);
   }
 
   applyStatusFilter(): void {
-    this.page = 0;
-    this.applyLocalFilterAndPagination();
+    this.page.set(0);
   }
 
   clearFilter(): void {
-    this.keyword = '';
-    this.selectedStatus = '';
-    this.page = 0;
-    this.applyLocalFilterAndPagination();
+    this.keyword.set('');
+    this.selectedStatus.set('');
+    this.page.set(0);
   }
 
   refreshUsers(): void {
-    this.keyword = '';
-    this.selectedStatus = '';
-    this.page = 0;
+    this.keyword.set('');
+    this.selectedStatus.set('');
+    this.page.set(0);
     this.loadUsers();
+  }
+
+  onKeywordChange(value: string): void {
+    this.keyword.set(value);
+    this.page.set(0);
+  }
+
+  onStatusChange(value: string): void {
+    this.selectedStatus.set(value);
+    this.page.set(0);
   }
 
   viewUser(user: User): void {
@@ -203,8 +235,14 @@ export class UserListComponent implements OnInit {
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User activated successfully');
-          user.active = response.active;
-          this.loadUsers();
+
+          this.allUsers.update(users =>
+            users.map(item =>
+              item.id === user.id
+                ? { ...item, active: response.active }
+                : item
+            )
+          );
         }
       });
   }
@@ -226,36 +264,28 @@ export class UserListComponent implements OnInit {
       .subscribe({
         next: response => {
           this.toastr.success(response.message || 'User deactivated successfully');
-          user.active = response.active;
-          this.loadUsers();
+
+          this.allUsers.update(users =>
+            users.map(item =>
+              item.id === user.id
+                ? { ...item, active: response.active }
+                : item
+            )
+          );
         }
       });
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
-      this.applyLocalFilterAndPagination();
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
     }
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
-      this.applyLocalFilterAndPagination();
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
     }
-  }
-
-  canCreate(): boolean {
-    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
-  }
-
-  canEdit(): boolean {
-    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
-  }
-
-  canManageLogin(): boolean {
-    return this.permissionService.hasPermission(this.permissions.USER_WRITE);
   }
 
   showActivateButton(user: User): boolean {

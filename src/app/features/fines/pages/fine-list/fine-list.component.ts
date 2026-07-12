@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { FineApiService } from '../../services/fine-api.service';
@@ -22,31 +29,31 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
     FormsModule
   ],
   templateUrl: './fine-list.component.html',
-  styleUrl: './fine-list.component.scss'
+  styleUrl: './fine-list.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FineListComponent implements OnInit {
 
   private readonly fineApiService = inject(FineApiService);
   private readonly authService = inject(AuthService);
-  private readonly permissionServiceInternal = inject(PermissionService);
+  private readonly permissionService = inject(PermissionService);
   private readonly toastr = inject(ToastrService);
   private readonly router = inject(Router);
   private readonly confirmDialogService = inject(ConfirmDialogService);
 
-  public readonly permissionService = this.permissionServiceInternal;
-  public readonly permissions = PERMISSIONS;
+  readonly permissions = PERMISSIONS;
 
-  fineRecords: BorrowRecord[] = [];
+  readonly fineRecords = signal<BorrowRecord[]>([]);
 
-  fineStatuses = FINE_STATUSES;
-  selectedFineStatus: FineStatus = FineStatus.ALL;
+  readonly fineStatuses = FINE_STATUSES;
+  readonly selectedFineStatus = signal<FineStatus>(FineStatus.ALL);
 
-  isLoading = false;
+  readonly isLoading = signal(false);
 
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
   ngOnInit(): void {
     this.loadFines();
@@ -62,23 +69,24 @@ export class FineListComponent implements OnInit {
   }
 
   loadAllFines(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.fineApiService.getAllFineRecords(
-      this.selectedFineStatus,
-      this.page,
-      this.size
-    ).subscribe({
-      next: response => {
-        this.fineRecords = response.content;
-        this.totalPages = response.totalPages;
-        this.totalElements = response.totalElements;
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-      }
-    });
+      this.selectedFineStatus(),
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: response => {
+          this.fineRecords.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
+        },
+        error: () => {
+          this.resetData();
+        }
+      });
   }
 
   loadMemberFines(): void {
@@ -89,56 +97,68 @@ export class FineListComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.fineApiService.getMyFineRecords(
       userId,
-      this.selectedFineStatus,
-      this.page,
-      this.size
-    ).subscribe({
-      next: response => {
-        this.fineRecords = response.content;
-        this.totalPages = response.totalPages;
-        this.totalElements = response.totalElements;
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-      }
-    });
+      this.selectedFineStatus(),
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: response => {
+          this.fineRecords.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
+        },
+        error: () => {
+          this.resetData();
+        }
+      });
+  }
+
+  private resetData(): void {
+    this.fineRecords.set([]);
+    this.totalPages.set(0);
+    this.totalElements.set(0);
   }
 
   applyFilter(): void {
-    this.page = 0;
+    this.page.set(0);
     this.loadFines();
+  }
+
+  onFineStatusChange(value: FineStatus): void {
+    this.selectedFineStatus.set(value);
+    this.applyFilter();
   }
 
   viewFine(record: BorrowRecord): void {
     this.router.navigate(['/app/fines', record.id]);
   }
 
- async markFineAsPaid(record: BorrowRecord): Promise<void> {
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Mark Fine as Paid',
-    message: `Mark fine as paid for borrow record #${record.id}?`,
-    confirmText: 'Mark Paid',
-    cancelText: 'Cancel',
-    variant: 'success'
-  });
-
-  if (!confirmed) {
-    return;
-  }
-
-  this.fineApiService.markFineAsPaid(record.id)
-    .subscribe({
-      next: () => {
-        this.toastr.success('Fine marked as paid');
-        this.loadFines();
-      }
+  async markFineAsPaid(record: BorrowRecord): Promise<void> {
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Mark Fine as Paid',
+      message: `Mark fine as paid for borrow record #${record.id}?`,
+      confirmText: 'Mark Paid',
+      cancelText: 'Cancel',
+      variant: 'success'
     });
-}
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.fineApiService.markFineAsPaid(record.id)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Fine marked as paid');
+          this.loadFines();
+        }
+      });
+  }
 
   canPayFine(record: BorrowRecord): boolean {
     return (record.fineAmount ?? 0) > 0 &&
@@ -163,15 +183,15 @@ export class FineListComponent implements OnInit {
   }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
       this.loadFines();
     }
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
       this.loadFines();
     }
   }

@@ -8,18 +8,20 @@
       </p>
     </div>
 
-    <a [routerLink]="['/app/users', userId]" class="btn btn-outline-secondary">
+    <a [routerLink]="['/app/users', userId()]" class="btn btn-outline-secondary">
       Back
     </a>
   </div>
 
-  <div *ngIf="isLoading" class="text-center py-5">
+  @if (isLoading()) {
+  <div class="text-center py-5">
     <div class="spinner-border text-primary"></div>
     <p class="text-muted mt-2">Loading user...</p>
   </div>
+  }
 
+  @if (!isLoading()) {
   <form
-    *ngIf="!isLoading"
     class="form-card mt-3"
     [formGroup]="userForm"
     (ngSubmit)="save()">
@@ -42,9 +44,11 @@
         <select class="form-select" formControlName="membershipType">
           <option value="">Select membership type</option>
 
-          <option *ngFor="let type of membershipTypes" [value]="type.value">
+          @for (type of membershipTypes; track type.value) {
+          <option [value]="type.value">
             {{ type.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -54,9 +58,11 @@
         <select class="form-select" formControlName="membershipStatus">
           <option value="">Select membership status</option>
 
-          <option *ngFor="let status of membershipStatuses" [value]="status.value">
+          @for (status of membershipStatuses; track status.value) {
+          <option [value]="status.value">
             {{ status.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -65,21 +71,26 @@
     <div class="form-actions mt-4">
       <button
         type="button"
-        [routerLink]="['/app/users', userId]"
+        [routerLink]="['/app/users', userId()]"
         class="btn btn-outline-secondary">
         Cancel
       </button>
 
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
-        <span *ngIf="!isSaving">Update User</span>
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+        @if (!isSaving()) {
+        <span>Update User</span>
+        }
 
-        <span *ngIf="isSaving">
-          <span class="spinner-border spinner-border-sm me-1"></span>
-          Updating...
-        </span>
+        @if (isSaving()) {
+        <span>
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Updating...
+            </span>
+        }
       </button>
     </div>
 
   </form>
+  }
 
 </div>

@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
-
+import { finalize } from 'rxjs';
 
 import { PermissionService } from '../../../../core/services/permission.service';
 import { DashboardCard } from '../../../../core/models/dashboard-card.model';
@@ -21,108 +28,122 @@ import { AuthService } from '../../../auth/services/auth.service';
     RouterLink
   ],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrl: './dashboard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit {
 
   private readonly dashboardService = inject(DashboardService);
+  public readonly authService = inject(AuthService);
+  public readonly permissionService = inject(PermissionService);
 
-  isLoading = false;
+  readonly isLoading = signal(false);
 
-  dashboardCards: DashboardCard[] = [
-  {
-    title: 'Users',
-    value: 0,
-    description: 'Registered library users',
-    icon: 'bi bi-people',
-    colorClass: 'card-info',
-    permissions: [PERMISSIONS.USER_READ],
-    roles: [ROLES.ADMIN]
-  },
-  {
-    title: 'Books',
-    value: 0,
-    description: 'Books available in catalog',
-    icon: 'bi bi-journal-bookmark',
-    colorClass: 'card-primary',
-    permissions: [PERMISSIONS.BOOK_READ],
-    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-  },
-  {
-    title: 'Available Books',
-    value: 0,
-    description: 'Books available to borrow',
-    icon: 'bi bi-journal-bookmark',
-    colorClass: 'card-primary',
-    permissions: [PERMISSIONS.BOOK_READ],
-    roles: [ROLES.MEMBER]
-  },
-  {
-    title: 'Low Stock',
-    value: 0,
-    description: 'Books with low available copies',
-    icon: 'bi bi-box-seam',
-    colorClass: 'card-success',
-    permissions: [PERMISSIONS.INVENTORY_READ],
-    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-  },
-  {
-    title: 'Borrow Records',
-    value: 0,
-    description: 'Borrow and return activity',
-    icon: 'bi bi-arrow-left-right',
-    colorClass: 'card-warning',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-  },
-  {
-    title: 'My Borrows',
-    value: 0,
-    description: 'Your borrow and return history',
-    icon: 'bi bi-person-lines-fill',
-    colorClass: 'card-warning',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.MEMBER]
-  },
-  {
-    title: 'Pending Fines',
-    value: 0,
-    description: 'Unpaid overdue fine records',
-    icon: 'bi bi-cash-coin',
-    colorClass: 'card-danger',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-  },
-  {
-    title: 'My Pending Fines',
-    value: 0,
-    description: 'Your unpaid overdue fines',
-    icon: 'bi bi-cash-coin',
-    colorClass: 'card-danger',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.MEMBER]
-  },
-  {
-    title: 'Notifications',
-    value: 0,
-    description: 'Borrow and return alerts',
-    icon: 'bi bi-bell',
-    colorClass: 'card-secondary',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
-  },
-  {
-    title: 'My Notifications',
-    value: 0,
-    description: 'Your library alerts and reminders',
-    icon: 'bi bi-bell',
-    colorClass: 'card-secondary',
-    permissions: [PERMISSIONS.BORROW_READ],
-    roles: [ROLES.MEMBER]
-  }
-];
+  readonly summary = signal<DashboardSummary>({
+    totalUsers: 0,
+    totalBooks: 0,
+    availableBooks: 0,
+    lowStockBooks: 0,
+    borrowRecords: 0,
+    pendingFines: 0,
+    notifications: 0,
+    memberView: false
+  });
 
-  quickActions: QuickAction[] = [
+  readonly dashboardCards = signal<DashboardCard[]>([
+    {
+      title: 'Users',
+      value: 0,
+      description: 'Registered library users',
+      icon: 'bi bi-people',
+      colorClass: 'card-info',
+      permissions: [PERMISSIONS.USER_READ],
+      roles: [ROLES.ADMIN]
+    },
+    {
+      title: 'Books',
+      value: 0,
+      description: 'Books available in catalog',
+      icon: 'bi bi-journal-bookmark',
+      colorClass: 'card-primary',
+      permissions: [PERMISSIONS.BOOK_READ],
+      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+    },
+    {
+      title: 'Available Books',
+      value: 0,
+      description: 'Books available to borrow',
+      icon: 'bi bi-journal-bookmark',
+      colorClass: 'card-primary',
+      permissions: [PERMISSIONS.BOOK_READ],
+      roles: [ROLES.MEMBER]
+    },
+    {
+      title: 'Low Stock',
+      value: 0,
+      description: 'Books with low available copies',
+      icon: 'bi bi-box-seam',
+      colorClass: 'card-success',
+      permissions: [PERMISSIONS.INVENTORY_READ],
+      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+    },
+    {
+      title: 'Borrow Records',
+      value: 0,
+      description: 'Borrow and return activity',
+      icon: 'bi bi-arrow-left-right',
+      colorClass: 'card-warning',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+    },
+    {
+      title: 'My Borrows',
+      value: 0,
+      description: 'Your borrow and return history',
+      icon: 'bi bi-person-lines-fill',
+      colorClass: 'card-warning',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.MEMBER]
+    },
+    {
+      title: 'Pending Fines',
+      value: 0,
+      description: 'Unpaid overdue fine records',
+      icon: 'bi bi-cash-coin',
+      colorClass: 'card-danger',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+    },
+    {
+      title: 'My Pending Fines',
+      value: 0,
+      description: 'Your unpaid overdue fines',
+      icon: 'bi bi-cash-coin',
+      colorClass: 'card-danger',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.MEMBER]
+    },
+    {
+      title: 'Notifications',
+      value: 0,
+      description: 'Borrow and return alerts',
+      icon: 'bi bi-bell',
+      colorClass: 'card-secondary',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.ADMIN, ROLES.LIBRARIAN]
+    },
+    {
+      title: 'My Notifications',
+      value: 0,
+      description: 'Your library alerts and reminders',
+      icon: 'bi bi-bell',
+      colorClass: 'card-secondary',
+      permissions: [PERMISSIONS.BORROW_READ],
+      roles: [ROLES.MEMBER]
+    }
+  ]);
+
+  readonly quickActions = signal<QuickAction[]>([
     {
       label: 'Add Book',
       icon: 'bi bi-plus-circle',
@@ -171,84 +192,25 @@ export class DashboardComponent implements OnInit {
       permissions: [PERMISSIONS.BORROW_READ],
       roles: [ROLES.MEMBER]
     }
-  ];
+  ]);
 
-  constructor(
-    public authService: AuthService,
-    public permissionService: PermissionService
-  ) {}
+  readonly userEmail = computed(() =>
+    this.authService.getEmail() ?? 'User'
+  );
 
-  ngOnInit(): void {
-    this.loadDashboardValues();
-  }
+  readonly roles = computed(() =>
+    this.authService.getRoles()
+  );
 
-  loadDashboardValues(): void {
-    this.isLoading = true;
+  readonly permissions = computed(() =>
+    this.authService.getPermissions()
+  );
 
-    this.dashboardService.loadDashboardSummary()
-      .subscribe({
-        next: summary => {
-          this.updateCardValues(summary);
-          this.isLoading = false;
-        },
-        error: () => {
-          this.isLoading = false;
-        }
-      });
-  }
+  readonly primaryRole = computed(() =>
+    this.permissionService.getPrimaryRole()
+  );
 
- private updateCardValues(summary: DashboardSummary): void {
-  this.dashboardCards = this.dashboardCards.map(card => {
-    switch (card.title) {
-      case 'Users':
-        return { ...card, value: summary.totalUsers };
-
-      case 'Books':
-        return { ...card, value: summary.totalBooks };
-
-      case 'Available Books':
-        return { ...card, value: summary.availableBooks };
-
-      case 'Low Stock':
-        return { ...card, value: summary.lowStockBooks };
-
-      case 'Borrow Records':
-      case 'My Borrows':
-        return { ...card, value: summary.borrowRecords };
-
-      case 'Pending Fines':
-      case 'My Pending Fines':
-        return { ...card, value: summary.pendingFines };
-
-      case 'Notifications':
-      case 'My Notifications':
-        return { ...card, value: summary.notifications };
-
-      default:
-        return card;
-    }
-  });
-}
-
-
-
-  get userEmail(): string {
-    return this.authService.getEmail() ?? 'User';
-  }
-
-  get roles(): string[] {
-    return this.authService.getRoles();
-  }
-
-  get permissions(): string[] {
-    return this.authService.getPermissions();
-  }
-
-  get primaryRole(): string {
-    return this.permissionService.getPrimaryRole();
-  }
-
-  get welcomeTitle(): string {
+  readonly welcomeTitle = computed(() => {
     if (this.permissionService.isAdmin()) {
       return 'Admin Dashboard';
     }
@@ -262,9 +224,9 @@ export class DashboardComponent implements OnInit {
     }
 
     return 'Dashboard';
-  }
+  });
 
-  get welcomeDescription(): string {
+  readonly welcomeDescription = computed(() => {
     if (this.permissionService.isAdmin()) {
       return 'Manage users, books, inventory, borrow records, fines, and notifications.';
     }
@@ -278,29 +240,104 @@ export class DashboardComponent implements OnInit {
     }
 
     return 'Welcome to Smart Library Platform.';
-  }
+  });
 
-  visibleCards(): DashboardCard[] {
-    return this.dashboardCards.filter(card =>
-      this.permissionService.canDisplay(card.permissions, card.roles)
-    );
-  }
+  readonly visibleCards = computed(() => {
+    const summary = this.summary();
 
-  visibleQuickActions(): QuickAction[] {
-    return this.quickActions.filter(action =>
+    return this.dashboardCards()
+      .filter(card =>
+        this.permissionService.canDisplay(card.permissions, card.roles)
+      )
+      .map(card => ({
+        ...card,
+        value: this.getCardValue(card.title, summary)
+      }));
+  });
+
+  readonly visibleQuickActions = computed(() =>
+    this.quickActions().filter(action =>
       this.permissionService.canDisplay(action.permissions, action.roles)
-    );
+    )
+  );
+
+  readonly showAdminPanel = computed(() =>
+    this.permissionService.isAdmin()
+  );
+
+  readonly showLibrarianPanel = computed(() =>
+    this.permissionService.isLibrarian()
+  );
+
+  readonly showMemberPanel = computed(() =>
+    this.permissionService.isMember()
+  );
+
+  ngOnInit(): void {
+    this.loadDashboardValues();
   }
 
-  showAdminPanel(): boolean {
-    return this.permissionService.isAdmin();
+  loadDashboardValues(): void {
+    this.isLoading.set(true);
+
+    this.dashboardService.loadDashboardSummary()
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: summary => {
+          this.summary.set({
+            totalUsers: summary?.totalUsers ?? 0,
+            totalBooks: summary?.totalBooks ?? 0,
+            availableBooks: summary?.availableBooks ?? 0,
+            lowStockBooks: summary?.lowStockBooks ?? 0,
+            borrowRecords: summary?.borrowRecords ?? 0,
+            pendingFines: summary?.pendingFines ?? 0,
+            notifications: summary?.notifications ?? 0,
+            memberView: summary?.memberView ?? false
+          });
+        },
+        error: () => {
+          this.summary.set({
+            totalUsers: 0,
+            totalBooks: 0,
+            availableBooks: 0,
+            lowStockBooks: 0,
+            borrowRecords: 0,
+            pendingFines: 0,
+            notifications: 0,
+            memberView: false
+          });
+        }
+      });
   }
 
-  showLibrarianPanel(): boolean {
-    return this.permissionService.isLibrarian();
-  }
+  private getCardValue(title: string, summary: DashboardSummary): number {
+    switch (title) {
+      case 'Users':
+        return summary.totalUsers;
 
-  showMemberPanel(): boolean {
-    return this.permissionService.isMember();
+      case 'Books':
+        return summary.totalBooks;
+
+      case 'Available Books':
+        return summary.availableBooks;
+
+      case 'Low Stock':
+        return summary.lowStockBooks;
+
+      case 'Borrow Records':
+      case 'My Borrows':
+        return summary.borrowRecords;
+
+      case 'Pending Fines':
+      case 'My Pending Fines':
+        return summary.pendingFines;
+
+      case 'Notifications':
+      case 'My Notifications':
+        return summary.notifications;
+
+      default:
+        return 0;
+    }
   }
 }

@@ -11,30 +11,35 @@
         Back
       </a>
 
+      @if (book() && canBorrowBook()) {
       <button
-        *ngIf="book && canBorrowBook()"
         type="button"
         class="btn btn-success me-2"
         (click)="borrowThisBook()">
         <i class="bi bi-journal-arrow-down me-1"></i>
         Borrow This Book
       </button>
+      }
 
+      @if (book() && permissionService.hasPermission(permissions.BOOK_WRITE)) {
       <a
-        *ngIf="book && permissionService.hasPermission(permissions.BOOK_WRITE)"
-        [routerLink]="['/app/books', book.id, 'edit']"
+        [routerLink]="['/app/books', book()?.id, 'edit']"
         class="btn btn-primary">
         Edit
       </a>
+      }
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="text-center py-5">
+  @if (isLoading()) {
+  <div class="text-center py-5">
     <div class="spinner-border text-primary"></div>
     <p class="text-muted mt-2">Loading book details...</p>
   </div>
+  }
 
-  <div *ngIf="!isLoading && book" class="detail-card mt-3">
+  @if (!isLoading() && book(); as book) {
+  <div class="detail-card mt-3">
     <div class="book-title-section">
       <div>
         <h3>{{ book.title }}</h3>
@@ -42,17 +47,16 @@
       </div>
 
       <span class="badge" [ngClass]="getAvailabilityClass(book)">
-        {{ getAvailabilityText(book) }}
-      </span>
+          {{ getAvailabilityText(book) }}
+        </span>
     </div>
 
-    <div
-      class="alert alert-warning mt-3"
-      *ngIf="(book.availableCopies ?? 0) <= 0">
-      <i class="bi bi-exclamation-triangle me-1"></i>
-      This book is currently out of stock and cannot be borrowed.
-    </div>
-
+@if (book.availableCopies <= 0) {
+  <div class="alert alert-warning mt-3">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    This book is currently out of stock and cannot be borrowed.
+  </div>
+}
     <div class="row g-4 mt-2">
       <div class="col-md-6">
         <label>ISBN</label>
@@ -85,5 +89,6 @@
       </div>
     </div>
   </div>
+  }
 
 </div>

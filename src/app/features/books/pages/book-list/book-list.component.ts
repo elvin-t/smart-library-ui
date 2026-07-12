@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
 import { BookApiService } from '../../services/book-api.service';
@@ -20,144 +27,164 @@ import { PermissionService } from '../../../../core/services/permission.service'
     RouterLink
   ],
   templateUrl: './book-list.component.html',
-  styleUrl: './book-list.component.scss'
+  styleUrl: './book-list.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BookListComponent implements OnInit {
 
-  books: Book[] = [];
-  genres = BOOK_GENRES;
-  permissions = PERMISSIONS;
+  private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly bookApiService = inject(BookApiService);
+  private readonly permissionService = inject(PermissionService);
+  private readonly toastr = inject(ToastrService);
 
-  keyword = '';
-  selectedGenre = '';
-  isLoading = false;
+  readonly books = signal<Book[]>([]);
+  readonly genres = BOOK_GENRES;
+  readonly permissions = PERMISSIONS;
 
-  page = 0;
-  size = 10;
-  totalPages = 0;
-  totalElements = 0;
+  readonly keyword = signal('');
+  readonly selectedGenre = signal('');
+  readonly isLoading = signal(false);
 
-  constructor(
-    private confirmDialogService: ConfirmDialogService,
-    private bookApiService: BookApiService,
-    private permissionService: PermissionService,
-    private toastr: ToastrService,
-  ){
-
-  }
+  readonly page = signal(0);
+  readonly size = signal(10);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
   ngOnInit(): void {
     this.loadBooks();
   }
 
-  hasPermission(permission: string): boolean{
+  hasPermission(permission: string): boolean {
     return this.permissionService.hasPermission(permission);
   }
 
   loadBooks(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.bookApiService.getBooks(this.page, this.size)
+    this.bookApiService.getBooks(this.page(), this.size())
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.books = response.content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
-          this.isLoading = false;
+          this.books.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
         },
         error: () => {
-          this.isLoading = false;
+          this.books.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
         }
       });
   }
 
   search(): void {
-    this.page = 0;
+    this.page.set(0);
 
-    if (!this.keyword.trim()) {
+    const searchText = this.keyword().trim();
+
+    if (!searchText) {
       this.loadBooks();
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.bookApiService.searchBooks(this.keyword.trim(), this.page, this.size)
+    this.bookApiService.searchBooks(searchText, this.page(), this.size())
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.books = response.content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
-          this.isLoading = false;
+          this.books.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
         },
         error: () => {
-          this.isLoading = false;
+          this.books.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
         }
       });
   }
 
   filterByGenre(): void {
-    this.page = 0;
+    this.page.set(0);
 
-    if (!this.selectedGenre) {
+    const genre = this.selectedGenre();
+
+    if (!genre) {
       this.loadBooks();
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.bookApiService.getBooksByGenre(this.selectedGenre as BookGenre, this.page, this.size)
+    this.bookApiService.getBooksByGenre(
+      genre as BookGenre,
+      this.page(),
+      this.size()
+    )
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: response => {
-          this.books = response.content;
-          this.totalPages = response.totalPages;
-          this.totalElements = response.totalElements;
-          this.isLoading = false;
+          this.books.set(response?.content ?? []);
+          this.totalPages.set(response?.totalPages ?? 0);
+          this.totalElements.set(response?.totalElements ?? 0);
         },
         error: () => {
-          this.isLoading = false;
+          this.books.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
         }
       });
   }
 
   clearFilters(): void {
-    this.keyword = '';
-    this.selectedGenre = '';
-    this.page = 0;
+    this.keyword.set('');
+    this.selectedGenre.set('');
+    this.page.set(0);
     this.loadBooks();
   }
 
-  async deleteBook(book: Book): Promise<void> {
-  const confirmed = await this.confirmDialogService.confirm({
-    title: 'Delete Book',
-    message: `Are you sure you want to delete "${book.title}"? This action cannot be undone.`,
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
-    variant: 'danger'
-  });
-
-  if (!confirmed) {
-    return;
+  onKeywordChange(value: string): void {
+    this.keyword.set(value);
   }
 
-  this.bookApiService.deleteBook(book.id)
-    .subscribe({
-      next: () => {
-        this.toastr.success('Book deleted successfully');
-        this.loadBooks();
-      }
+  onGenreChange(value: string): void {
+    this.selectedGenre.set(value);
+    this.filterByGenre();
+  }
+
+  async deleteBook(book: Book): Promise<void> {
+    const confirmed = await this.confirmDialogService.confirm({
+      title: 'Delete Book',
+      message: `Are you sure you want to delete "${book.title}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger'
     });
-}
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.bookApiService.deleteBook(book.id)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Book deleted successfully');
+          this.loadBooks();
+        }
+      });
+  }
 
   nextPage(): void {
-    if (this.page + 1 < this.totalPages) {
-      this.page++;
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update(value => value + 1);
       this.loadBooks();
     }
   }
 
   previousPage(): void {
-    if (this.page > 0) {
-      this.page--;
+    if (this.page() > 0) {
+      this.page.update(value => value - 1);
       this.loadBooks();
     }
   }

@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { PERMISSIONS } from '../../core/constants/permissions';
@@ -15,21 +21,24 @@ import { PermissionService } from '../../core/services/permission.service';
     RouterLinkActive
   ],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss'
+  styleUrl: './sidebar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SidebarComponent {
 
-  menuItems: SidebarMenuItem[] = [
+  private readonly permissionService = inject(PermissionService);
+
+  readonly menuItems = signal<SidebarMenuItem[]>([
     {
       label: 'Dashboard',
       icon: 'bi bi-speedometer2',
       route: '/app/dashboard'
     },
     {
-  label: 'My Profile',
-  icon: 'bi bi-person-circle',
-  route: '/app/profile'
-   },
+      label: 'My Profile',
+      icon: 'bi bi-person-circle',
+      route: '/app/profile'
+    },
     {
       label: 'Users',
       icon: 'bi bi-people',
@@ -76,13 +85,11 @@ export class SidebarComponent {
       route: '/app/notifications',
       permissions: [PERMISSIONS.BORROW_READ]
     }
-  ];
+  ]);
 
-  constructor(public permissionService: PermissionService) {}
-
-  visibleMenuItems(): SidebarMenuItem[] {
-    return this.menuItems.filter(item =>
+  readonly visibleMenuItems = computed(() =>
+    this.menuItems().filter(item =>
       this.permissionService.canDisplay(item.permissions, item.roles)
-    );
-  }
+    )
+  );
 }

@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -16,7 +21,8 @@ import { AdminCreateUserRequest } from '../../models/admin-create-user-request.m
     RouterLink
   ],
   templateUrl: './user-create.component.html',
-  styleUrl: './user-create.component.scss'
+  styleUrl: './user-create.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserCreateComponent {
 
@@ -25,15 +31,15 @@ export class UserCreateComponent {
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
 
-  isSaving = false;
-  showPassword = false;
+  readonly isSaving = signal(false);
+  readonly showPassword = signal(false);
 
-  roles = [
+  readonly roles = [
     { value: 'MEMBER', label: 'Member' },
     { value: 'LIBRARIAN', label: 'Librarian' }
   ];
 
-  userForm = this.formBuilder.group({
+  readonly userForm = this.formBuilder.group({
     fullName: ['', [Validators.required, Validators.maxLength(150)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.maxLength(20)]],
@@ -42,7 +48,7 @@ export class UserCreateComponent {
   });
 
   createUser(): void {
-    if (this.userForm.invalid) {
+    if (this.userForm.invalid || this.isSaving()) {
       this.userForm.markAllAsTouched();
       return;
     }
@@ -57,7 +63,7 @@ export class UserCreateComponent {
       role: value.role as 'MEMBER' | 'LIBRARIAN'
     };
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
     this.adminUserApiService.createUser(request)
       .subscribe({
@@ -66,13 +72,13 @@ export class UserCreateComponent {
           this.router.navigate(['/app/users', response.id]);
         },
         error: () => {
-          this.isSaving = false;
+          this.isSaving.set(false);
         }
       });
   }
 
   togglePassword(): void {
-    this.showPassword = !this.showPassword;
+    this.showPassword.update(value => !value);
   }
 
   get fullNameInvalid(): boolean {

@@ -1,7 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ToastrService } from 'ngx-toastr';
 
 import { BorrowApiService } from '../../services/borrow-api.service';
@@ -20,7 +28,8 @@ import { AuthService } from '../../../auth/services/auth.service';
     RouterLink
   ],
   templateUrl: './borrow-create.component.html',
-  styleUrl: './borrow-create.component.scss'
+  styleUrl: './borrow-create.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BorrowCreateComponent implements OnInit {
 
@@ -35,17 +44,40 @@ export class BorrowCreateComponent implements OnInit {
 
   public readonly permissionService = this.permissionServiceInternal;
 
-  availableBooks: Book[] = [];
+  readonly availableBooks = signal<Book[]>([]);
 
-  isLoadingBooks = false;
-  isSaving = false;
+  readonly isLoadingBooks = signal(false);
+  readonly isSaving = signal(false);
 
-  requestedBookId?: number;
+  readonly requestedBookId = signal<number | null>(null);
 
-  borrowForm = this.formBuilder.group({
+  readonly borrowForm = this.formBuilder.group({
     userId: [this.authService.getUserId(), [Validators.required, Validators.min(1)]],
     bookId: [null as number | null, [Validators.required, Validators.min(1)]]
   });
+
+  readonly selectedBookId = toSignal(
+    this.borrowForm.controls.bookId.valueChanges,
+    {
+      initialValue: this.borrowForm.controls.bookId.value
+    }
+  );
+
+  readonly selectedBook = computed(() => {
+    const bookId = Number(this.selectedBookId());
+
+    if (!bookId) {
+      return undefined;
+    }
+
+    return this.availableBooks().find(book => book.id === bookId);
+  });
+
+  readonly backRoute = computed(() =>
+    this.permissionService.isMember()
+      ? '/app/books'
+      : '/app/borrow-records'
+  );
 
   ngOnInit(): void {
     this.readQueryParams();
@@ -61,7 +93,8 @@ export class BorrowCreateComponent implements OnInit {
     const bookId = Number(this.route.snapshot.queryParamMap.get('bookId'));
 
     if (bookId && bookId > 0) {
-      this.requestedBookId = bookId;
+      this.requestedBookId.set(bookId);
+
       this.borrowForm.patchValue({
         bookId
       });
@@ -69,35 +102,39 @@ export class BorrowCreateComponent implements OnInit {
   }
 
   loadAvailableBooks(): void {
-    this.isLoadingBooks = true;
+    this.isLoadingBooks.set(true);
 
     this.bookApiService.getAvailableBooks(0, 100)
       .subscribe({
         next: response => {
-          this.availableBooks = (response?.content ?? [])
+          const books = (response?.content ?? [])
             .filter(book =>
               (book.availableCopies ?? 0) > 0 &&
               book.available
             );
 
+          this.availableBooks.set(books);
+
           this.handleRequestedBookAfterLoad();
 
-          this.isLoadingBooks = false;
+          this.isLoadingBooks.set(false);
         },
         error: () => {
-          this.availableBooks = [];
-          this.isLoadingBooks = false;
+          this.availableBooks.set([]);
+          this.isLoadingBooks.set(false);
         }
       });
   }
 
   private handleRequestedBookAfterLoad(): void {
-    if (!this.requestedBookId) {
+    const requestedBookId = this.requestedBookId();
+
+    if (!requestedBookId) {
       return;
     }
 
-    const bookExists = this.availableBooks.some(
-      book => book.id === this.requestedBookId
+    const bookExists = this.availableBooks().some(
+      book => book.id === requestedBookId
     );
 
     if (!bookExists) {
@@ -124,7 +161,7 @@ export class BorrowCreateComponent implements OnInit {
       bookId: Number(rawValue.bookId)
     };
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
     this.borrowApiService.borrowBook(request)
       .subscribe({
@@ -138,20 +175,8 @@ export class BorrowCreateComponent implements OnInit {
           }
         },
         error: () => {
-          this.isSaving = false;
+          this.isSaving.set(false);
         }
       });
-  }
-
-  get selectedBook(): Book | undefined {
-    const bookId = Number(this.borrowForm.getRawValue().bookId);
-
-    return this.availableBooks.find(book => book.id === bookId);
-  }
-
-  get backRoute(): string {
-    return this.permissionService.isMember()
-      ? '/app/books'
-      : '/app/borrow-records';
   }
 }

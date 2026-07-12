@@ -25,9 +25,11 @@
           [class.is-invalid]="fullNameInvalid"
         />
 
-        <div class="invalid-feedback" *ngIf="fullNameInvalid">
+        @if (fullNameInvalid) {
+        <div class="invalid-feedback">
           Full name is required.
         </div>
+        }
       </div>
 
       <div class="mb-3">
@@ -41,9 +43,11 @@
           [class.is-invalid]="emailInvalid"
         />
 
-        <div class="invalid-feedback" *ngIf="emailInvalid">
+        @if (emailInvalid) {
+        <div class="invalid-feedback">
           Please enter a valid email address.
         </div>
+        }
       </div>
 
       <div class="mb-3">
@@ -57,9 +61,11 @@
           [class.is-invalid]="phoneInvalid"
         />
 
-        <div class="invalid-feedback" *ngIf="phoneInvalid">
+        @if (phoneInvalid) {
+        <div class="invalid-feedback">
           Phone number must not exceed 20 characters.
         </div>
+        }
       </div>
 
       <div class="mb-3">
@@ -67,7 +73,7 @@
 
         <div class="input-group">
           <input
-            [type]="showPassword ? 'text' : 'password'"
+            [type]="showPassword() ? 'text' : 'password'"
             class="form-control"
             formControlName="password"
             placeholder="Minimum 6 characters"
@@ -81,14 +87,16 @@
 
             <i
               class="bi"
-              [class.bi-eye]="!showPassword"
-              [class.bi-eye-slash]="showPassword">
+              [class.bi-eye]="!showPassword()"
+              [class.bi-eye-slash]="showPassword()">
             </i>
           </button>
 
-          <div class="invalid-feedback" *ngIf="passwordInvalid">
+          @if (passwordInvalid) {
+          <div class="invalid-feedback">
             Password must be at least 6 characters.
           </div>
+          }
         </div>
       </div>
 
@@ -97,7 +105,7 @@
 
         <div class="input-group">
           <input
-            [type]="showConfirmPassword ? 'text' : 'password'"
+            [type]="showConfirmPassword() ? 'text' : 'password'"
             class="form-control"
             formControlName="confirmPassword"
             placeholder="Confirm password"
@@ -111,14 +119,16 @@
 
             <i
               class="bi"
-              [class.bi-eye]="!showConfirmPassword"
-              [class.bi-eye-slash]="showConfirmPassword">
+              [class.bi-eye]="!showConfirmPassword()"
+              [class.bi-eye-slash]="showConfirmPassword()">
             </i>
           </button>
 
-          <div class="invalid-feedback" *ngIf="confirmPasswordInvalid">
+          @if (confirmPasswordInvalid) {
+          <div class="invalid-feedback">
             Password and confirm password must match.
           </div>
+          }
         </div>
       </div>
 
@@ -130,16 +140,20 @@
       <button
         type="submit"
         class="btn btn-primary w-100"
-        [disabled]="isLoading">
+        [disabled]="isLoading()">
 
-        <span *ngIf="!isLoading">
-          Register
-        </span>
+        @if (!isLoading()) {
+        <span>
+            Register
+          </span>
+        }
 
-        <span *ngIf="isLoading">
-          <span class="spinner-border spinner-border-sm me-2"></span>
-          Creating account...
-        </span>
+        @if (isLoading()) {
+        <span>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Creating account...
+          </span>
+        }
       </button>
 
     </form>

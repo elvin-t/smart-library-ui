@@ -1,7 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
@@ -17,7 +24,8 @@ import { AuthService } from '../../services/auth.service';
     RouterLink
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrl: './register.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegisterComponent {
 
@@ -26,16 +34,26 @@ export class RegisterComponent {
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
 
-  isLoading = false;
-  showPassword = false;
-  showConfirmPassword = false;
+  readonly isLoading = signal(false);
+  readonly showPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
 
-  registerForm = this.formBuilder.group({
+  readonly registerForm = this.formBuilder.nonNullable.group({
     fullName: ['', [Validators.required, Validators.maxLength(150)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.maxLength(20)]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', [Validators.required]]
+  });
+
+  readonly formValue = toSignal(this.registerForm.valueChanges, {
+    initialValue: this.registerForm.getRawValue()
+  });
+
+  readonly passwordsMatch = computed(() => {
+    const value = this.formValue();
+
+    return value.password === value.confirmPassword;
   });
 
   register(): void {
@@ -49,19 +67,19 @@ export class RegisterComponent {
       return;
     }
 
-    const value = this.registerForm.value;
+    const value = this.registerForm.getRawValue();
 
     const request: RegisterRequest = {
-      fullName: value.fullName ?? '',
-      email: value.email ?? '',
-      phone: value.phone ?? '',
-      password: value.password ?? ''
+      fullName: value.fullName,
+      email: value.email,
+      phone: value.phone,
+      password: value.password
     };
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.authService.register(request)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: () => {
           this.toastr.success('Registration successful. Please login.');
@@ -70,16 +88,12 @@ export class RegisterComponent {
       });
   }
 
-  passwordsMatch(): boolean {
-    return this.registerForm.value.password === this.registerForm.value.confirmPassword;
-  }
-
   togglePassword(): void {
-    this.showPassword = !this.showPassword;
+    this.showPassword.update(value => !value);
   }
 
   toggleConfirmPassword(): void {
-    this.showConfirmPassword = !this.showConfirmPassword;
+    this.showConfirmPassword.update(value => !value);
   }
 
   get fullNameInvalid(): boolean {

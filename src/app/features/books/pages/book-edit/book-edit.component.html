@@ -6,16 +6,19 @@
       <p class="text-muted mb-0">Update book catalog information.</p>
     </div>
 
-    <a [routerLink]="['/app/books', bookId]" class="btn btn-outline-secondary">
+    <a [routerLink]="['/app/books', bookId()]" class="btn btn-outline-secondary">
       Back
     </a>
   </div>
 
-  <div *ngIf="isLoading" class="text-center py-5">
+  @if (isLoading()) {
+  <div class="text-center py-5">
     <div class="spinner-border text-primary"></div>
   </div>
+  }
 
-  <form *ngIf="!isLoading" class="form-card mt-3" [formGroup]="bookForm" (ngSubmit)="update()">
+  @if (!isLoading()) {
+  <form class="form-card mt-3" [formGroup]="bookForm" (ngSubmit)="update()">
     <div class="row g-3">
 
       <div class="col-md-6">
@@ -32,9 +35,12 @@
         <label class="form-label">Genre</label>
         <select class="form-select" formControlName="genre">
           <option value="">Select genre</option>
-          <option *ngFor="let genre of genres" [value]="genre.value">
+
+          @for (genre of genres; track genre.value) {
+          <option [value]="genre.value">
             {{ genre.label }}
           </option>
+          }
         </select>
       </div>
 
@@ -60,18 +66,27 @@
     </div>
 
     <div class="form-actions mt-4">
-      <button type="button" [routerLink]="['/app/books', bookId]" class="btn btn-outline-secondary">
+      <button
+        type="button"
+        [routerLink]="['/app/books', bookId()]"
+        class="btn btn-outline-secondary">
         Cancel
       </button>
 
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
-        <span *ngIf="!isSaving">Update Book</span>
-        <span *ngIf="isSaving">
-          <span class="spinner-border spinner-border-sm me-1"></span>
-          Updating...
-        </span>
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+        @if (!isSaving()) {
+        <span>Update Book</span>
+        }
+
+        @if (isSaving()) {
+        <span>
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Updating...
+            </span>
+        }
       </button>
     </div>
   </form>
+  }
 
 </div>
