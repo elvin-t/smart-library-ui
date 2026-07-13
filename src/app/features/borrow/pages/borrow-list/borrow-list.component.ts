@@ -18,6 +18,7 @@ import { BORROW_STATUSES, BorrowStatus } from '../../models/borrow-status.model'
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../core/constants/permissions';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-borrow-list',
@@ -35,6 +36,7 @@ export class BorrowListComponent implements OnInit {
 
   private readonly borrowApiService = inject(BorrowApiService);
   private readonly toastr = inject(ToastrService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly confirmDialogService = inject(ConfirmDialogService);
 
@@ -57,23 +59,35 @@ export class BorrowListComponent implements OnInit {
   }
 
   loadBorrowRecords(): void {
-    this.isLoading.set(true);
+  this.isLoading.set(true);
 
-    this.borrowApiService.getAllBorrowRecords(this.page(), this.size())
-      .pipe(finalize(() => this.isLoading.set(false)))
-      .subscribe({
-        next: response => {
-          this.borrowRecords.set(response?.content ?? []);
-          this.totalPages.set(response?.totalPages ?? 0);
-          this.totalElements.set(response?.totalElements ?? 0);
-        },
-        error: () => {
-          this.borrowRecords.set([]);
-          this.totalPages.set(0);
-          this.totalElements.set(0);
-        }
-      });
-  }
+  const request$ = this.permissionService.isMember()
+    ? this.borrowApiService.getBorrowRecordsByUser(
+        Number(this.authService.getUserId()),
+        this.page(),
+        this.size()
+      )
+    : this.borrowApiService.getAllBorrowRecords(
+        this.page(),
+        this.size()
+      );
+
+  request$
+    .subscribe({
+      next: response => {
+        this.borrowRecords.set(response?.content ?? []);
+        this.totalPages.set(response?.totalPages ?? 0);
+        this.totalElements.set(response?.totalElements ?? 0);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.borrowRecords.set([]);
+        this.totalPages.set(0);
+        this.totalElements.set(0);
+        this.isLoading.set(false);
+      }
+    });
+}
 
   filterByStatus(resetPage = true): void {
     if (resetPage) {
