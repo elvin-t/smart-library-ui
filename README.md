@@ -1,1020 +1,713 @@
-# Smart Library Platform - Angular Frontend Documentation
+# Smart Library Platform UI
 
-> Production-ready Angular frontend for the Smart Library Platform. This application provides a role-based user interface for Admin, Librarian, and Member users to manage books, inventory, borrowing, fines, notifications, user profiles, and dashboard analytics.
+Smart Library Platform UI is a modern Angular-based frontend application developed for the Smart Library Platform microservices backend. The application provides role-based screens and workflows for Admin, Librarian, and Member users to manage books, inventory, borrowing, returns, fines, notifications, and profile information.
+
+The application is built using Angular 21 with standalone components, Signals, computed state, signal inputs, modern control flow syntax, JWT-based authentication, and permission-based UI rendering.
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Frontend Architecture](#frontend-architecture)
-- [Technology Stack](#technology-stack)
-- [Application Features](#application-features)
-- [User Roles and UI Behavior](#user-roles-and-ui-behavior)
-- [Project Folder Structure](#project-folder-structure)
-- [Routing Structure](#routing-structure)
-- [Core Module](#core-module)
-- [Layout Module](#layout-module)
-- [Shared Module](#shared-module)
+- [Tech Stack](#tech-stack)
+- [Key Features](#key-features)
+- [Application Roles](#application-roles)
+- [Angular 21 Migration Highlights](#angular-21-migration-highlights)
+- [Project Structure](#project-structure)
+- [Core Modules](#core-modules)
 - [Feature Modules](#feature-modules)
-- [Authentication Flow](#authentication-flow)
-- [Authorization and Permission-Based UI](#authorization-and-permission-based-ui)
-- [HTTP Interceptors](#http-interceptors)
-- [Dashboard Module](#dashboard-module)
-- [Auth Module](#auth-module)
-- [Book Module](#book-module)
-- [Inventory Module](#inventory-module)
-- [Borrow Module](#borrow-module)
-- [Fine Module](#fine-module)
-- [Notification Module](#notification-module)
-- [User Module](#user-module)
-- [Profile Module](#profile-module)
-- [Reusable Confirmation Modal](#reusable-confirmation-modal)
-- [Angular Environment Configuration](#angular-environment-configuration)
-- [Local Development Setup](#local-development-setup)
-- [Production Build](#production-build)
-- [AWS S3 and CloudFront Deployment](#aws-s3-and-cloudfront-deployment)
-- [Recommended Demo Flow](#recommended-demo-flow)
-- [Completed Implementation Checklist](#completed-implementation-checklist)
-- [Future Improvements](#future-improvements)
+- [Shared Components](#shared-components)
+- [Authentication and Authorization](#authentication-and-authorization)
+- [Role-Based Access Flow](#role-based-access-flow)
+- [API Gateway Integration](#api-gateway-integration)
+- [Environment Configuration](#environment-configuration)
+- [Installation and Setup](#installation-and-setup)
+- [Run Application](#run-application)
+- [Build Application](#build-application)
+- [Important Routes](#important-routes)
+- [Frontend Best Practices Implemented](#frontend-best-practices-implemented)
+- [Backend Services Used](#backend-services-used)
+- [Kafka-Based Notification Flow](#kafka-based-notification-flow)
+- [Future Enhancements](#future-enhancements)
+- [Author](#author)
+- [Project Status](#project-status)
 
 ---
 
 ## Overview
 
-The **Smart Library Platform Angular Frontend** is a single-page application built using Angular standalone components.
+The Smart Library Platform UI is designed to provide a clean and responsive user experience for managing library operations. It communicates with the backend through an API Gateway and supports secure access using JWT tokens.
 
-It supports:
+The application supports three main user roles:
 
-```text
-Login
-Member self-registration
-JWT token handling
-Role-based sidebar
-Permission-based actions
-Dashboard summary cards
-Book catalog management
-Inventory management
-Borrow and return workflows
-Fine payment workflow
-Notification read/unread workflow
-Admin user management
-Logged-in user profile page
-Reusable confirmation modal
-AWS S3 + CloudFront deployment readiness
-```
+- Admin
+- Librarian
+- Member
 
-The application is designed to work with the Smart Library backend through API Gateway.
+Each role has different permissions and access to different pages.
 
 ---
 
-## Frontend Architecture
+## Tech Stack
 
-```text
-Angular SPA
-   ↓
-AuthInterceptor adds JWT token
-   ↓
-TraceInterceptor adds X-Trace-Id
-   ↓
-ErrorInterceptor handles API errors/toasters
-   ↓
-API Gateway
-   ↓
-Backend microservices
-```
-
-The frontend is organized using a feature-based folder structure:
-
-```text
-core       → guards, interceptors, constants, shared services
-shared     → reusable UI components, pipes, directives, modal services
-layout     → header, sidebar, main layout
-features   → auth, dashboard, books, inventory, borrow, fines, notifications, users, profile
-```
+- Angular 21
+- TypeScript
+- Angular Signals
+- Angular Standalone Components
+- Angular Router
+- Angular Reactive Forms
+- Angular Template-driven Forms
+- New Angular Control Flow Syntax
+  - `@if`
+  - `@for`
+- Bootstrap 5
+- Bootstrap Icons
+- ngx-toastr
+- RxJS
+- JWT Authentication
+- Role-Based Access Control
+- Permission-Based UI Rendering
 
 ---
 
-## Technology Stack
+## Key Features
 
-```text
-Angular
-TypeScript
-Angular Standalone Components
-Angular Router
-Reactive Forms
-Template-driven Forms where required
-Angular HttpClient
-Bootstrap
-Bootstrap Icons
-SCSS
-ngx-toastr
-JWT decode support
-AWS S3 + CloudFront deployment support
-```
+### Authentication
+
+- User login
+- Member registration
+- JWT token storage
+- Token-based session handling
+- Logout functionality
+- Protected routes
+
+### Authorization
+
+- Role-based route access
+- Permission-based UI rendering
+- Admin, Librarian, and Member specific menus
+- Dynamic sidebar based on user role and permissions
+
+### Book Management
+
+- View book list
+- Search books
+- Filter books by genre
+- View book details
+- Create book
+- Edit book
+- Delete book
+- Availability status display
+
+### Inventory Management
+
+- View book inventory
+- Manage total copies
+- Manage available copies
+- Add copies
+- Remove copies
+- Adjust available copies
+- View low-stock books
+- Threshold-based low stock filtering
+
+### Borrow Management
+
+- Borrow book
+- View borrow records
+- View borrow details
+- Return book
+- Member-specific borrow records
+- Admin/Librarian all borrow records view
+- Role-based borrow record creation
+
+### Fine Management
+
+- View fine records
+- View fine details
+- Display overdue days
+- Display fine amount
+- Mark fine as paid
+- Role-based fine visibility
+  - Member sees own fines
+  - Admin/Librarian sees all fines
+
+### Notification Management
+
+- View notifications
+- Mark notification as read
+- Mark all notifications as read
+- Display unread count
+- Kafka-based backend notification event support
+
+### User Management
+
+- View user list
+- View user details
+- Create user
+- Edit user
+- Activate user login
+- Deactivate user login
+- Profile page for logged-in user
 
 ---
 
-## Application Features
-
-```text
-✅ Login
-✅ Self-register as Member
-✅ JWT token storage
-✅ Automatic token injection
-✅ Automatic trace ID injection
-✅ Global API error toaster
-✅ Role-based sidebar
-✅ Permission-based buttons
-✅ Dashboard summary API integration
-✅ Book list, create, edit, detail, delete
-✅ Borrow button from book detail page
-✅ Inventory list with all books
-✅ Inventory low-stock view
-✅ Borrow create with available book dropdown
-✅ My Borrows for logged-in Member
-✅ Fine list and fine detail
-✅ Mark fine as paid
-✅ Notification list
-✅ Notification read/unread
-✅ Mark all notifications as read
-✅ User search by name/email/phone
-✅ Admin create Member/Librarian
-✅ Admin activate/deactivate login
-✅ Accurate login status from backend
-✅ Logged-in user profile page
-✅ Reusable confirmation modal
-✅ Fixed layout scrolling: header/sidebar fixed, content scroll only
-```
-
----
-
-## User Roles and UI Behavior
+## Application Roles
 
 ### Admin
 
-Admin can access:
+Admin has full access to the platform.
 
-```text
-Dashboard
-Users
-Books
-Inventory
-Borrow Records
-Fines
-Notifications
-Profile
-```
+Admin can:
 
-Admin can perform:
-
-```text
-Create Member and Librarian users
-Update user profile
-Update membership status
-Activate/deactivate user login
-Create/update/delete books
-Manage inventory
-View all borrow records
-Return books
-View and pay fines
-View notifications
-View dashboard analytics
-```
+- Manage users
+- Manage books
+- Manage inventory
+- View all borrow records
+- Return books
+- Manage fines
+- Mark fines as paid
+- View notifications
+- Access profile
 
 ---
 
 ### Librarian
 
-Librarian can access:
+Librarian can manage library operations but has limited user management access.
 
-```text
-Dashboard
-Books
-Inventory
-Borrow Records
-Fines
-Notifications
-Profile
-```
+Librarian can:
 
-Librarian can perform:
-
-```text
-Manage books depending on permissions
-Manage inventory
-View borrow records
-Return books
-View and manage fines
-View notifications
-```
+- Manage books
+- Manage inventory
+- View all borrow records
+- Return books
+- Manage fines
+- Mark fines as paid
+- View notifications
+- Access profile
 
 ---
 
 ### Member
 
-Member can access:
+Member has limited self-service access.
 
-```text
-Dashboard
-Books
-My Borrows
-Fines
-Notifications
-Profile
-```
+Member can:
 
-Member can perform:
+- View books
+- Borrow available books
+- View own borrow records
+- View own fines
+- View notifications
+- Access profile
 
-```text
-Browse books
-Borrow available books
-View own borrow records
-Return own borrowed book if permitted
-View own fines
-View own notifications
-Mark notifications as read
-View own profile
-```
+Member cannot:
 
-Member should not access:
-
-```text
-User Management
-Inventory Management
-All Borrow Records
-Admin user actions
-Book create/edit/delete actions unless explicitly permitted
-```
+- View all users
+- Manage inventory
+- View all borrow records
+- Manage other users' borrow records
+- Mark fines as paid manually
 
 ---
 
-## Project Folder Structure
+## Angular 21 Migration Highlights
 
-```text
-smart-library-ui/
-├── src/
-│   ├── app/
-│   │   ├── app.component.ts
-│   │   ├── app.component.html
-│   │   ├── app.component.scss
-│   │   ├── app.config.ts
-│   │   ├── app.routes.ts
-│   │   │
-│   │   ├── core/
-│   │   │   ├── constants/
-│   │   │   │   ├── api-endpoints.ts
-│   │   │   │   ├── app-routes.ts
-│   │   │   │   ├── permissions.ts
-│   │   │   │   └── roles.ts
-│   │   │   │
-│   │   │   ├── guards/
-│   │   │   │   ├── auth.guard.ts
-│   │   │   │   └── permission.guard.ts
-│   │   │   │
-│   │   │   ├── interceptors/
-│   │   │   │   ├── auth.interceptor.ts
-│   │   │   │   ├── error.interceptor.ts
-│   │   │   │   └── trace.interceptor.ts
-│   │   │   │
-│   │   │   ├── models/
-│   │   │   │   ├── error-response.model.ts
-│   │   │   │   ├── page-response.model.ts
-│   │   │   │   ├── dashboard-card.model.ts
-│   │   │   │   ├── quick-action.model.ts
-│   │   │   │   └── sidebar-menu.model.ts
-│   │   │   │
-│   │   │   └── services/
-│   │   │       ├── auth.service.ts
-│   │   │       ├── token.service.ts
-│   │   │       ├── storage.service.ts
-│   │   │       ├── permission.service.ts
-│   │   │       └── loading.service.ts
-│   │   │
-│   │   ├── shared/
-│   │   │   ├── components/
-│   │   │   │   ├── confirm-dialog/
-│   │   │   │   ├── empty-state/
-│   │   │   │   ├── loading-spinner/
-│   │   │   │   ├── page-header/
-│   │   │   │   └── status-badge/
-│   │   │   │
-│   │   │   ├── directives/
-│   │   │   │   └── has-permission.directive.ts
-│   │   │   │
-│   │   │   ├── pipes/
-│   │   │   │   ├── date-time.pipe.ts
-│   │   │   │   └── currency-format.pipe.ts
-│   │   │   │
-│   │   │   └── services/
-│   │   │       └── confirm-dialog.service.ts
-│   │   │
-│   │   ├── layout/
-│   │   │   ├── header/
-│   │   │   ├── sidebar/
-│   │   │   └── main-layout/
-│   │   │
-│   │   └── features/
-│   │       ├── auth/
-│   │       ├── dashboard/
-│   │       ├── books/
-│   │       ├── inventory/
-│   │       ├── borrow/
-│   │       ├── fines/
-│   │       ├── notifications/
-│   │       ├── users/
-│   │       └── profile/
-│   │
-│   ├── environments/
-│   │   ├── environment.ts
-│   │   └── environment.prod.ts
-│   │
-│   └── styles.scss
-│
-├── angular.json
-├── package.json
-├── tsconfig.json
-└── README.md
+The application has been upgraded to use Angular 21 recommended patterns.
+
+### Signals
+
+Component state has been migrated from normal class properties to Angular Signals.
+
+Example:
+
+```ts
+readonly isLoading = signal(false);
+readonly books = signal<Book[]>([]);
+readonly page = signal(0);
+readonly totalPages = signal(0);
 ```
 
----
-
-## Routing Structure
-
-Main routes:
-
-```text
-/login
-/register
-/access-denied
-/app/dashboard
-/app/profile
-/app/books
-/app/books/create
-/app/books/:id
-/app/books/:id/edit
-/app/inventory
-/app/inventory/low-stock
-/app/inventory/:bookId
-/app/borrow-records
-/app/borrow-records/create
-/app/borrow-records/:id
-/app/my-borrows
-/app/fines
-/app/fines/:borrowRecordId
-/app/notifications
-/app/users
-/app/users/create
-/app/users/:id
-/app/users/:id/edit
-```
-
-Important route order:
-
-```text
-books/create before books/:id
-books/:id/edit before books/:id
-inventory/low-stock before inventory/:bookId
-borrow-records/create before borrow-records/:id
-users/create before users/:id
-users/:id/edit before users/:id
-```
-
----
-
-## Core Module
-
-The `core` folder contains application-wide logic.
-
-### Constants
-
-```text
-api-endpoints.ts   → backend endpoint paths
-permissions.ts     → permission constants
-roles.ts           → role constants
-app-routes.ts      → route constants if used
-```
-
-### Guards
-
-```text
-auth.guard.ts       → blocks unauthenticated access
-permission.guard.ts → blocks access when required permission is missing
-```
-
-### Interceptors
-
-```text
-auth.interceptor.ts  → adds Authorization Bearer token
-trace.interceptor.ts → adds X-Trace-Id
-error.interceptor.ts → shows API error toaster and redirects when needed
-```
-
-### Services
-
-```text
-AuthService        → login/logout/register/session methods
-TokenService       → token save/read/decode/expiry
-StorageService     → storage wrapper
-PermissionService  → role and permission checks
-LoadingService     → optional loading state
-```
-
----
-
-## Layout Module
-
-Layout structure:
+Template usage:
 
 ```html
-<div class="app-shell">
-  <app-sidebar></app-sidebar>
+@if (isLoading()) {
+  <div>Loading...</div>
+}
 
-  <div class="app-main">
-    <app-header></app-header>
-
-    <main class="app-content">
-      <router-outlet></router-outlet>
-    </main>
-  </div>
-
-  <app-confirm-dialog></app-confirm-dialog>
-</div>
-```
-
-Layout behavior:
-
-```text
-Header fixed
-Sidebar fixed
-Only child page content scrolls
-Reusable confirm modal is globally available
-```
-
-Recommended global CSS:
-
-```scss
-html,
-body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
+@for (book of books(); track book.id) {
+  <div>{{ book.title }}</div>
 }
 ```
 
 ---
 
-## Shared Module
+### Computed Signals
 
-Shared reusable items:
+Derived state is handled using `computed()`.
+
+Example:
+
+```ts
+readonly selectedBook = computed(() => {
+  const bookId = Number(this.selectedBookId());
+
+  if (!bookId) {
+    return undefined;
+  }
+
+  return this.availableBooks().find(book => book.id === bookId);
+});
+```
+
+---
+
+### Signal Inputs
+
+Reusable components use signal-based inputs.
+
+Example:
+
+```ts
+readonly status = input('');
+```
+
+Template:
+
+```html
+<span>{{ status() }}</span>
+```
+
+---
+
+### Modern Control Flow
+
+Old structural directives were migrated.
+
+Before:
+
+```html
+<div *ngIf="isLoading">Loading...</div>
+<div *ngFor="let book of books">{{ book.title }}</div>
+```
+
+After:
+
+```html
+@if (isLoading()) {
+  <div>Loading...</div>
+}
+
+@for (book of books(); track book.id) {
+  <div>{{ book.title }}</div>
+}
+```
+
+---
+
+### OnPush Change Detection
+
+Components use `ChangeDetectionStrategy.OnPush` for better performance.
+
+```ts
+changeDetection: ChangeDetectionStrategy.OnPush
+```
+
+---
+
+## Project Structure
 
 ```text
-ConfirmDialogComponent
-PageHeaderComponent
-LoadingSpinnerComponent
-EmptyStateComponent
-StatusBadgeComponent
-HasPermissionDirective
-DateTimePipe
-CurrencyFormatPipe
-ConfirmDialogService
+src/
+└── app/
+    ├── core/
+    │   ├── constants/
+    │   ├── guards/
+    │   ├── interceptors/
+    │   ├── models/
+    │   └── services/
+    │
+    ├── features/
+    │   ├── auth/
+    │   ├── books/
+    │   ├── borrow/
+    │   ├── fines/
+    │   ├── inventory/
+    │   ├── notifications/
+    │   └── users/
+    │
+    ├── layout/
+    │   ├── header/
+    │   └── sidebar/
+    │
+    ├── shared/
+    │   ├── components/
+    │   └── services/
+    │
+    ├── app.component.ts
+    ├── app.routes.ts
+    └── app.config.ts
+```
+
+---
+
+## Core Modules
+
+### Core Services
+
+```text
+core/services/
+```
+
+Includes:
+
+- Auth service integration
+- Token service
+- Storage service
+- Permission service
+- HTTP interceptors
+- Route guards
+
+---
+
+### Constants
+
+```text
+core/constants/
+```
+
+Includes:
+
+- Roles
+- Permissions
+
+Example:
+
+```ts
+export const PERMISSIONS = {
+  USER_READ: 'USER_READ',
+  USER_WRITE: 'USER_WRITE',
+  BOOK_READ: 'BOOK_READ',
+  BOOK_WRITE: 'BOOK_WRITE',
+  BORROW_READ: 'BORROW_READ',
+  BORROW_WRITE: 'BORROW_WRITE',
+  RETURN_READ: 'RETURN_READ',
+  RETURN_WRITE: 'RETURN_WRITE',
+  INVENTORY_READ: 'INVENTORY_READ',
+  INVENTORY_WRITE: 'INVENTORY_WRITE'
+};
 ```
 
 ---
 
 ## Feature Modules
 
-The application is split into feature folders:
+### Auth Feature
 
 ```text
-auth
-profile
-dashboard
-books
-inventory
-borrow
-fines
-notifications
-users
+features/auth/
 ```
 
-Each feature usually contains:
+Pages:
 
-```text
-models
-services
-pages
-```
+- Login
+- Register
+
+Responsibilities:
+
+- User login
+- Member registration
+- JWT token handling
+- Redirect after login
+- Logout support
 
 ---
 
-## Authentication Flow
+### Books Feature
 
 ```text
-User opens /login
-User enters email/password
-Angular calls POST /api/auth/login
-Backend returns JWT token
-TokenService stores token
-AuthInterceptor attaches token to secured API calls
-User is redirected to /app/dashboard
+features/books/
 ```
 
-Token storage key example:
+Pages:
 
-```text
-smart_library_token
-```
+- Book List
+- Book Detail
+- Book Create
+- Book Edit
+
+Features:
+
+- Book search
+- Genre filter
+- Pagination
+- Availability display
+- Role-based create/edit/delete actions
 
 ---
 
-## Authorization and Permission-Based UI
-
-The UI uses permissions from JWT to show/hide routes and buttons.
-
-Examples:
+### Inventory Feature
 
 ```text
-USER_READ       → show Users menu/list
-USER_WRITE      → show Create/Edit/Activate/Deactivate user actions
-BOOK_READ       → show Books
-BOOK_WRITE      → show Create/Edit/Delete book
-INVENTORY_READ  → show Inventory page
-INVENTORY_WRITE → show inventory actions
-BORROW_READ     → show Borrow/Fines/Notifications
-BORROW_WRITE    → show Borrow Book action
-RETURN_WRITE    → show Return Book / Mark Fine Paid actions
-DASHBOARD_READ  → access dashboard summary API
+features/inventory/
 ```
 
-Frontend permission checks only improve UX. Backend/API Gateway remains the final security authority.
+Pages:
+
+- Inventory List
+- Inventory Detail
+- Low Stock
+
+Features:
+
+- View inventory
+- Manage book copies
+- Add/remove copies
+- Adjust available copies
+- Low-stock tracking
 
 ---
 
-## HTTP Interceptors
-
-### Auth Interceptor
-
-Adds token:
-
-```http
-Authorization: Bearer <TOKEN>
-```
-
-### Trace Interceptor
-
-Adds trace ID:
-
-```http
-X-Trace-Id: <uuid>
-```
-
-### Error Interceptor
-
-Handles API errors:
+### Borrow Feature
 
 ```text
-400 → validation warning toaster
-401 → remove token and redirect login
-403 → access denied toaster and redirect if required
-409 → conflict warning toaster
-0   → backend unavailable toaster
-500 → generic error toaster
+features/borrow/
 ```
 
-Example backend error:
+Pages:
 
-```json
-{
-  "code": "AUTH_003",
-  "message": "User already exists with email: elvin@gmail.com",
-  "path": "/api/auth/register",
-  "traceId": "82487dfa-ad50-4759-805b-edeee0adf740",
-  "timestamp": "2026-07-10T19:49:42.2806275"
-}
-```
+- Borrow List
+- Borrow Detail
+- Borrow Create
+- My Borrows
 
-Frontend toaster displays:
+Features:
 
-```text
-User already exists with email: elvin@gmail.com
-```
+- Borrow book
+- Return book
+- View borrow history
+- Admin/Librarian all records view
+- Member own records view
+- Fine integration
 
 ---
 
-## Dashboard Module
-
-Dashboard now uses a backend summary API:
-
-```http
-GET /api/dashboard/summary
-```
-
-Angular service:
+### Fines Feature
 
 ```text
-DashboardApiService
-DashboardService
+features/fines/
 ```
 
-Dashboard summary model:
+Pages:
+
+- Fine List
+- Fine Detail
+
+Features:
+
+- View overdue fines
+- View fine details
+- Mark fine as paid
+- Member own fines view
+- Admin/Librarian all fines view
+
+---
+
+### Notifications Feature
+
+```text
+features/notifications/
+```
+
+Pages:
+
+- Notification List
+
+Features:
+
+- View notifications
+- Mark notification as read
+- Mark all notifications as read
+- Display notification status
+
+---
+
+### Users Feature
+
+```text
+features/users/
+```
+
+Pages:
+
+- User List
+- User Detail
+- User Create
+- User Edit
+- Profile
+
+Features:
+
+- View users
+- Manage user status
+- Activate/deactivate login access
+- Profile management
+
+---
+
+## Shared Components
+
+```text
+shared/components/
+```
+
+Reusable components include:
+
+- Confirm Dialog
+- Page Header
+- Status Badge
+
+---
+
+### Confirm Dialog
+
+Reusable confirmation dialog used for:
+
+- Delete book
+- Return book
+- Mark fine as paid
+- Activate/deactivate user
+
+Uses Angular Signals:
 
 ```ts
-export interface DashboardSummary {
-  totalUsers: number;
-  totalBooks: number;
-  availableBooks: number;
-  lowStockBooks: number;
-  borrowRecords: number;
-  pendingFines: number;
-  notifications: number;
-  memberView: boolean;
-}
-```
-
-### Admin Dashboard Cards
-
-```text
-Users
-Books
-Low Stock
-Borrow Records
-Pending Fines
-Notifications
-```
-
-### Librarian Dashboard Cards
-
-```text
-Books
-Low Stock
-Borrow Records
-Pending Fines
-Notifications
-```
-
-### Member Dashboard Cards
-
-```text
-Available Books
-My Borrows
-My Pending Fines
-My Notifications
+readonly isVisible = signal(false);
+readonly request = signal<ConfirmDialogRequest | null>(null);
 ```
 
 ---
 
-## Auth Module
+### Status Badge
 
-Pages:
-
-```text
-/login
-/register
-/access-denied
-```
-
-### Login Page
-
-Uses:
-
-```http
-POST /api/auth/login
-```
-
-### Register Page
-
-Uses:
-
-```http
-POST /api/auth/register
-```
-
-Self-registration creates only `MEMBER` account.
-
-Register request:
-
-```json
-{
-  "email": "member1@library.com",
-  "password": "member123",
-  "fullName": "Member One",
-  "phone": "9876543210"
-}
-```
-
----
-
-## Book Module
-
-Pages:
-
-```text
-/app/books
-/app/books/create
-/app/books/:id
-/app/books/:id/edit
-```
-
-Features:
-
-```text
-View books
-Search books
-View book detail
-Create book
-Edit book
-Delete book
-Borrow button from book detail page
-```
-
-### Borrow Button from Book Detail
-
-Book detail page shows:
-
-```text
-Borrow This Book
-```
-
-Only when:
-
-```text
-User has BORROW_WRITE
-Book availableCopies > 0
-Book available = true
-```
-
-Button navigates to:
-
-```text
-/app/borrow-records/create?bookId={id}
-```
-
----
-
-## Inventory Module
-
-Pages:
-
-```text
-/app/inventory
-/app/inventory/low-stock
-/app/inventory/:bookId
-```
-
-Features:
-
-```text
-Display all books with stock
-Search by title/author/ISBN
-View total copies
-View available copies
-Calculate borrowed copies
-Show Available / Low Stock / Out of Stock
-Manage inventory per book
-Add copies
-Remove copies
-Adjust available copies
-```
-
-Inventory list should display all books on page load. Search should filter or call book search API.
-
----
-
-## Borrow Module
-
-Pages:
-
-```text
-/app/borrow-records
-/app/borrow-records/create
-/app/borrow-records/:id
-/app/my-borrows
-```
-
-Features:
-
-```text
-Create borrow record
-Available books dropdown
-Preselect book from query parameter
-Member userId selected automatically from JWT
-Admin/Librarian can enter member userId
-View all borrow records for Admin/Librarian
-View own borrow records for Member
-Return book
-View fine details
-Mark fine as paid
-```
-
-Borrow create behavior:
-
-```text
-Member:
-  userId hidden
-  book dropdown shown
-  redirect to /app/my-borrows after success
-
-Admin/Librarian:
-  userId field shown
-  book dropdown shown
-  redirect to borrow detail after success
-```
-
-Unavailable books should not be displayed in borrow dropdown.
-
----
-
-## Fine Module
-
-Pages:
-
-```text
-/app/fines
-/app/fines/:borrowRecordId
-```
-
-Features:
-
-```text
-View fines
-Filter by paid/unpaid if implemented
-View fine detail
-Show overdue days
-Show fine amount
-Mark fine as paid
-```
-
----
-
-## Notification Module
-
-Page:
-
-```text
-/app/notifications
-```
-
-Features:
-
-```text
-View notifications
-Show total/read/unread counts
-Filter by notification type
-Filter by notification status
-Filter by read status
-Mark notification as read
-Mark all notifications as read
-Highlight unread notifications
-```
-
-Supported read filter:
-
-```text
-All
-Unread
-Read
-```
-
-Recommended APIs:
-
-```http
-GET /api/notifications
-GET /api/notifications/user/{userId}
-PATCH /api/notifications/{id}/read
-PATCH /api/notifications/user/{userId}/read-all
-```
-
----
-
-## User Module
-
-Pages:
-
-```text
-/app/users
-/app/users/create
-/app/users/:id
-/app/users/:id/edit
-```
-
-Features:
-
-```text
-View user list
-Search by name/email/phone
-Filter by membership status
-Local pagination for direct array response
-Create Member/Librarian user as Admin
-View user detail
-Edit user profile and membership
-Activate/deactivate user login
-Display accurate login active status from Auth Service
-```
-
-User Service response is profile data:
-
-```json
-[
-  {
-    "id": 1,
-    "email": "admin@library.com",
-    "fullName": "Admin User",
-    "phone": "9876543210",
-    "membershipType": "PREMIUM",
-    "membershipStatus": "ACTIVE",
-    "createdAt": "2026-07-01T15:30:26.074045",
-    "updatedAt": "2026-07-01T15:30:26.074045"
-  }
-]
-```
-
-Login status comes from Auth Service:
-
-```http
-GET /api/auth/admin/users/statuses
-GET /api/auth/admin/users/{userId}/status
-```
-
-Angular merges:
-
-```text
-User Service profile data + Auth Service active status
-```
-
----
-
-## Profile Module
-
-Page:
-
-```text
-/app/profile
-```
-
-Features:
-
-```text
-View logged-in user profile
-Show full name
-Show email
-Show phone
-Show membership type/status
-Show role from JWT
-Show permissions from JWT
-Back to dashboard
-```
-
-Profile page is protected by `authGuard` through parent `/app` route.
-
-No separate permission guard is required because every logged-in user should view own profile.
-
----
-
-## Reusable Confirmation Modal
-
-The application uses `ConfirmDialogService` and `ConfirmDialogComponent` instead of browser `confirm()`.
+Reusable status display component.
 
 Used for:
 
+- Borrow status
+- Fine status
+- Membership status
+- Notification status
+
+---
+
+### Page Header
+
+Reusable page heading component.
+
+Supports:
+
+- Title
+- Description
+- Back button
+- Action button
+- Action icon
+
+---
+
+## Authentication and Authorization
+
+The application uses JWT token-based authentication.
+
+After login:
+
 ```text
-Activate user
-Deactivate user
-Delete book
-Return book
-Mark fine as paid
-Remove inventory copies
-Mark all notifications as read
+JWT token is stored in session storage
+Token is sent in Authorization header
+Permissions and roles are decoded from token
+Routes and UI actions are controlled by role/permission
 ```
 
-Example usage:
+Authorization header:
 
-```ts
-const confirmed = await this.confirmDialogService.confirm({
-  title: 'Deactivate User Login',
-  message: 'Are you sure you want to deactivate this user?',
-  confirmText: 'Deactivate',
-  cancelText: 'Cancel',
-  variant: 'danger'
-});
-```
-
-Variants:
-
-```text
-primary
-success
-warning
-danger
+```http
+Authorization: Bearer <JWT_TOKEN>
 ```
 
 ---
 
-## Angular Environment Configuration
+## Role-Based Access Flow
 
-### Local
+### Sidebar Menu
 
-`src/environments/environment.ts`
+Sidebar menu items are filtered using role and permission.
+
+Example:
+
+```ts
+readonly visibleMenuItems = computed(() =>
+  this.menuItems().filter(item =>
+    this.permissionService.canDisplay(item.permissions, item.roles)
+  )
+);
+```
+
+---
+
+### Member Flow
+
+```text
+Member logs in
+  ↓
+Sidebar shows Books, My Borrows, Fines, Notifications, Profile
+  ↓
+Member can borrow available books
+  ↓
+Borrow Create auto-selects logged-in userId
+  ↓
+Member sees only own borrow records and fines
+```
+
+---
+
+### Admin/Librarian Flow
+
+```text
+Admin/Librarian logs in
+  ↓
+Sidebar shows management modules
+  ↓
+Can manage books, inventory, borrow records, returns, fines
+  ↓
+Can create borrow record for selected user
+  ↓
+Can view all borrow/fine records
+```
+
+---
+
+## API Gateway Integration
+
+The Angular application communicates with backend services through API Gateway.
+
+Example base routes:
+
+```text
+/api/auth
+/api/users
+/api/books
+/api/inventory
+/api/borrow-records
+/api/fines
+/api/notifications
+```
+
+The API Gateway routes requests to individual backend services using service discovery.
+
+---
+
+## Environment Configuration
+
+Example environment file:
 
 ```ts
 export const environment = {
@@ -1023,45 +716,64 @@ export const environment = {
 };
 ```
 
-### Production - Separate API Domain
-
-`src/environments/environment.prod.ts`
+For production build:
 
 ```ts
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.yourdomain.com'
+  apiBaseUrl: 'https://your-api-domain.com'
 };
 ```
-
-### Production - Same Domain `/api/*`
-
-```ts
-export const environment = {
-  production: true,
-  apiBaseUrl: ''
-};
-```
-
-If using CloudFront behavior `/api/*` to backend, keep `apiBaseUrl` empty.
 
 ---
 
-## Local Development Setup
+## Installation and Setup
 
-Install dependencies:
+### Prerequisites
+
+Install:
+
+```text
+Node.js
+npm
+Angular CLI
+Backend services running
+```
+
+Check versions:
+
+```bash
+node -v
+npm -v
+ng version
+```
+
+---
+
+### Clone Repository
+
+```bash
+git clone <repository-url>
+cd smart-library-platform-ui
+```
+
+---
+
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-Run application:
+---
+
+## Run Application
 
 ```bash
 ng serve
 ```
 
-Open:
+Application runs at:
 
 ```text
 http://localhost:4200
@@ -1069,227 +781,208 @@ http://localhost:4200
 
 ---
 
-## Production Build
+## Build Application
 
-Build:
+### Development Build
+
+```bash
+ng build
+```
+
+### Production Build
 
 ```bash
 ng build --configuration production
 ```
 
-Output folder may be:
+Build output:
 
 ```text
-dist/smart-library-ui/browser
+dist/
 ```
-
-or:
-
-```text
-dist/smart-library-ui
-```
-
-based on Angular version/configuration.
 
 ---
 
-## AWS S3 and CloudFront Deployment
+## Important Routes
 
-Recommended production-grade frontend deployment:
-
-```text
-Angular build files
-  ↓
-Private S3 bucket
-  ↓
-CloudFront distribution
-  ↓
-Route 53 custom domain optional
-  ↓
-ACM HTTPS certificate optional for custom domain
-```
-
-For practice, the lowest-cost setup is:
+### Public Routes
 
 ```text
-Private S3 + CloudFront default domain
+/login
+/register
 ```
 
-No Docker or Nginx is required for Angular when deploying through S3 and CloudFront.
-
-### Upload Script Example
-
-```bash
-#!/bin/bash
-
-set -e
-
-BUCKET_NAME="smart-library-ui-practice"
-DISTRIBUTION_ID="<YOUR_CLOUDFRONT_DISTRIBUTION_ID>"
-DIST_PATH="dist/smart-library-ui/browser"
-
-echo "Building Angular app..."
-ng build --configuration production
-
-echo "Uploading assets with long cache..."
-aws s3 sync "$DIST_PATH" "s3://$BUCKET_NAME" \
-  --exclude "index.html" \
-  --cache-control "public,max-age=31536000,immutable" \
-  --delete
-
-echo "Uploading index.html with short cache..."
-aws s3 cp "$DIST_PATH/index.html" "s3://$BUCKET_NAME/index.html" \
-  --cache-control "public,max-age=60" \
-  --content-type "text/html"
-
-echo "Invalidating only index.html..."
-aws cloudfront create-invalidation \
-  --distribution-id "$DISTRIBUTION_ID" \
-  --paths "/index.html"
-
-echo "Deployment completed."
-```
-
-### CloudFront SPA Routing
-
-Configure custom error responses:
-
-```text
-403 → /index.html → 200
-404 → /index.html → 200
-```
-
-This supports refresh/direct access for Angular routes like:
+### Protected Routes
 
 ```text
 /app/dashboard
-/app/books/1
-/app/users/1/edit
+/app/profile
+/app/users
+/app/books
+/app/books/create
+/app/books/:id
+/app/books/:id/edit
+/app/inventory
+/app/inventory/:bookId
+/app/inventory/low-stock
+/app/borrow-records
+/app/borrow-records/create
+/app/borrow-records/:id
+/app/my-borrows
+/app/fines
+/app/fines/:borrowRecordId
+/app/notifications
 ```
 
 ---
 
-## Recommended Demo Flow
+## Frontend Best Practices Implemented
 
-### Admin Demo
+- Angular standalone components
+- Angular Signals for component state
+- Computed signals for derived values
+- Signal inputs for reusable components
+- New Angular control flow syntax
+- OnPush change detection
+- Role-based route protection
+- Permission-based UI rendering
+- JWT token interceptor
+- Centralized permission service
+- Reusable shared components
+- Toast notifications
+- Confirmation dialog
+- Pagination
+- Search and filtering
+- Responsive Bootstrap layout
+- Clear separation of features and shared code
 
-```text
-1. Login as Admin
-2. Show Admin Dashboard
-3. Open User Management
-4. Search user by name/email
-5. Create Librarian or Member
-6. Deactivate and activate user login
-7. Open Books
-8. Create/Edit/Delete book
-9. Open Inventory
-10. Manage stock
-11. Open Borrow Records
-12. Return book
-13. Open Fines
-14. Mark fine as paid
-15. Open Notifications
-16. Mark notifications as read
-```
+---
 
-### Librarian Demo
+## Backend Services Used
 
-```text
-1. Login as Librarian
-2. Show Librarian Dashboard
-3. Open Books
-4. Manage inventory
-5. View borrow records
-6. Return book
-7. View fines
-8. View notifications
-```
-
-### Member Demo
+The UI integrates with the following backend services:
 
 ```text
-1. Login as Member
-2. Show Member Dashboard
-3. Browse books
-4. Open book detail
-5. Click Borrow This Book
-6. Borrow page opens with selected book
-7. Borrow book
-8. Open My Borrows
-9. View fines
-10. Open Notifications
-11. Mark notification as read
-12. Open My Profile
+API Gateway
+Auth Service
+User Service
+Book Service
+Inventory Service
+Borrow Service
+Notification Service
+Eureka Discovery Server
+Kafka
+PostgreSQL
 ```
 
 ---
 
-## Completed Implementation Checklist
+## Kafka-Based Notification Flow
+
+The backend uses Kafka for asynchronous notification creation.
+
+Example flow:
 
 ```text
-✅ Angular app structure
-✅ Auth login
-✅ Member self-register
-✅ JWT token storage
-✅ Auth interceptor
-✅ Error interceptor
-✅ Trace interceptor
-✅ Auth guard
-✅ Permission guard
-✅ Role-based sidebar
-✅ Fixed header/sidebar layout
-✅ Dashboard summary API integration
-✅ Admin/Librarian/Member dashboard cards
-✅ Book management
-✅ Borrow button from book detail
-✅ Inventory all-books list
-✅ Borrow create with available book dropdown
-✅ My Borrows
-✅ Fine list/detail
-✅ Mark fine paid
-✅ Notifications read/unread
-✅ User search by name/email/phone
-✅ Admin create user
-✅ Admin activate/deactivate user
-✅ Accurate login active status from backend
-✅ Logged-in user profile page
-✅ Reusable confirmation modal
-✅ AWS S3 + CloudFront deployment ready
+Borrow Service publishes BookBorrowedEvent
+  ↓
+Kafka topic: book-borrowed-events
+  ↓
+Notification Service consumes event
+  ↓
+Notification record is created
+  ↓
+Angular displays notification using REST API
+```
+
+Kafka topics:
+
+```text
+book-borrowed-events
+book-returned-events
+fine-paid-events
+```
+
+The frontend does not directly interact with Kafka. It reads notifications through REST APIs.
+
+---
+
+## Sample Login Roles
+
+```text
+ADMIN
+LIBRARIAN
+MEMBER
 ```
 
 ---
 
-## Future Improvements
+## Example Permission-Based UI
 
-```text
-Add charts to dashboard
-Add notification badge in header
-Add read/unread count in header
-Add export to CSV/PDF
-Add advanced table sorting
-Add server-side pagination for users
-Add profile edit for logged-in user
-Add refresh token support
-Add unit tests for guards/services/components
-Add Cypress or Playwright E2E tests
-Add CI/CD pipeline for S3 + CloudFront deployment
-Add CloudFront invalidation workflow in GitHub Actions/Jenkins
+```html
+@if (hasPermission(permissions.BOOK_WRITE)) {
+  <a routerLink="/app/books/create" class="btn btn-primary">
+    Add Book
+  </a>
+}
 ```
 
 ---
 
-## Final Summary
+## Example Signal-Based State
 
-The Smart Library Angular application is a production-ready frontend for a role-based library management platform.
+```ts
+readonly books = signal<Book[]>([]);
+readonly isLoading = signal(false);
+readonly page = signal(0);
+readonly totalPages = signal(0);
+```
 
-It supports Admin, Librarian, and Member workflows with secure JWT integration, route guards, permission-based UI, dashboard analytics, book and inventory management, borrow/return workflows, fines, notifications, user management, profile page, and AWS S3 + CloudFront deployment readiness.
+Template:
 
-The frontend is now suitable for:
+```html
+@if (isLoading()) {
+  <div class="spinner-border text-primary"></div>
+}
+
+@for (book of books(); track book.id) {
+  <tr>
+    <td>{{ book.title }}</td>
+  </tr>
+}
+```
+
+---
+
+## Future Enhancements
+
+- Add refresh token support
+- Add forgot password flow
+- Add email notification UI
+- Add real-time notification badge
+- Add dashboard charts
+- Add Angular unit tests
+- Add Cypress end-to-end tests
+- Add dark mode support
+- Add advanced book reservations
+- Add payment gateway for member fine payment
+- Add PWA support
+- Add deployment pipeline using GitHub Actions or Jenkins
+
+---
+
+## Author
+
+**MARIAELVIN**  
+Senior Full Stack Developer  
+Java | Spring Boot | Microservices | Angular | Kafka | AWS
+
+---
+
+## Project Status
 
 ```text
-Local development
-Manager demo
-Portfolio showcase
-AWS static hosting deployment
-Production-grade extension
+Status: Active Development
+Frontend: Angular 21 migrated with Signals and new control flow
+Backend: Spring Boot microservices with Kafka-based notification flow
 ```
